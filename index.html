@@ -167,8 +167,9 @@
 
       <div class="controls">
         <select id="personSelect" style="padding:6px 8px; border-radius:6px; border:1px solid #ddd;">
-          <option value="鲁迅">鲁迅</option>
           <option value="毛泽东">毛泽东</option>
+          <option value="列宁">列宁</option>
+          <option value="鲁迅">鲁迅</option>
         </select>
         <button id="play" class="play-btn">播放</button>
         <div style="flex:1">
@@ -220,8 +221,21 @@
         { year: 1959, age: 66, place: '庐山', lat: 29.570, lon: 115.990, title: '赴庐山活动', detail: '在庐山开展相关会议与活动（示例）。' },
         { year: 1976, age: 83, place: '北京', lat: 39.9042, lon: 116.4074, title: '逝世', detail: '在北京逝世（示例）。' },
       ],
+      '列宁': [
+        { year: 1870, age: 0, place: '辛比尔斯克（今乌里扬诺夫斯克）', lat: 54.319, lon: 48.377, title: '出生', detail: '出生于俄罗斯辛比尔斯克。' },
+        { year: 1895, age: 25, place: '圣彼得堡', lat: 59.934, lon: 30.335, title: '参与革命活动', detail: '参与工人运动与革命活动。' },
+        { year: 1897, age: 27, place: '舒申斯科耶（西伯利亚）', lat: 53.330, lon: 92.620, title: '流放西伯利亚', detail: '被流放至西伯利亚舒申斯科耶。' },
+        { year: 1900, age: 30, place: '慕尼黑', lat: 48.135, lon: 11.582, title: '流亡欧洲', detail: '在慕尼黑进行出版与组织工作。' },
+        { year: 1902, age: 32, place: '伦敦', lat: 51.507, lon: -0.128, title: '在伦敦活动', detail: '继续组织与宣传活动。' },
+        { year: 1903, age: 33, place: '日内瓦', lat: 46.204, lon: 6.143, title: '日内瓦时期', detail: '在瑞士参与出版与会议。' },
+        { year: 1905, age: 35, place: '圣彼得堡', lat: 59.934, lon: 30.335, title: '革命活动加剧', detail: '返回俄国参与活动。' },
+        { year: 1917, age: 47, place: '彼得格勒（圣彼得堡）', lat: 59.934, lon: 30.335, title: '十月革命', detail: '在彼得格勒领导十月革命。' },
+        { year: 1918, age: 48, place: '莫斯科', lat: 55.7558, lon: 37.6173, title: '迁至莫斯科', detail: '政府迁至莫斯科。' },
+        { year: 1923, age: 53, place: '戈尔基·列宁近郊', lat: 55.568, lon: 37.738, title: '疗养', detail: '在莫斯科近郊戈尔基疗养。' },
+        { year: 1924, age: 54, place: '戈尔基·列宁近郊', lat: 55.568, lon: 37.738, title: '逝世', detail: '在戈尔基逝世。' },
+      ],
     };
-    let currentPerson = '鲁迅';
+    let currentPerson = '毛泽东';
     let events = people[currentPerson];
 
     const eventsList = document.getElementById('eventsList');
@@ -252,6 +266,7 @@
     const personStyles = {
       '鲁迅': { markerColor: '#3B82F6', lineColor: '#93C5FD' },
       '毛泽东': { markerColor: '#EF4444', lineColor: '#FCA5A5' },
+      '列宁': { markerColor: '#14B8A6', lineColor: '#99F6E4' },
     };
 
     function getMarkerIcon(selected = false) {
