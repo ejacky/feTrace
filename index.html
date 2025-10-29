@@ -127,10 +127,12 @@
     /* 自定义圆点标记样式（带白色环） */
     .leaflet-div-icon { background: transparent; border: none; }
     .marker-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%;
-      border: 2px solid rgba(0,0,0,0.35); box-shadow: 0 0 0 4px rgba(255,255,255,0.95); }
+      background: #fff; border: 3px solid var(--mc, #8B5CF6);
+      box-shadow: 0 0 0 5px rgba(255,255,255,0.98), 0 2px 8px rgba(0,0,0,0.28); }
     .marker-blue   { background: #3B82F6; }
     .marker-purple { background: #8B5CF6; }
     .marker-orange { background: #F59E0B; }
+    .marker-dot.selected { box-shadow: 0 0 0 8px rgba(255,255,255,0.98), 0 0 0 14px rgba(255,255,255,0.55), 0 0 14px var(--mc), 0 6px 18px rgba(0,0,0,0.28); }
   </style>
 </head>
 
@@ -215,13 +217,14 @@
 
     // 不同人物的样式定义（标记颜色与轨迹颜色）
     const personStyles = {
-      '鲁迅': { markerClass: 'marker-blue',   lineColor: '#93C5FD' },
-      '示例人物': { markerClass: 'marker-orange', lineColor: '#FCD34D' },
+      '鲁迅': { markerColor: '#3B82F6', lineColor: '#93C5FD' },
+      '示例人物': { markerColor: '#F59E0B', lineColor: '#FCD34D' },
     };
 
-    function getMarkerIcon() {
-      const cls = (personStyles[currentPerson]?.markerClass) || 'marker-purple';
-      return L.divIcon({ className: 'marker-icon', html: `<span class="marker-dot ${cls}"></span>`, iconSize: [16,16], iconAnchor: [8,8] });
+    function getMarkerIcon(selected = false) {
+      const color = (personStyles[currentPerson]?.markerColor) || '#8B5CF6';
+      const selectedClass = selected ? ' selected' : '';
+      return L.divIcon({ className: 'marker-icon', html: `<span class="marker-dot${selectedClass}" style="--mc:${color}"></span>`, iconSize: [16,16], iconAnchor: [8,8] });
     }
 
     function drawMarkersAndLine() {
@@ -235,10 +238,11 @@
       polyline = L.polyline(path, { color, weight: 4, opacity: 0.85, dashArray: '6 6' }).addTo(map);
 
       events.forEach((e, idx) => {
-        const m = L.marker([e.lat, e.lon], { icon: getMarkerIcon() }).addTo(map);
+        const m = L.marker([e.lat, e.lon], { icon: getMarkerIcon(false) }).addTo(map);
         m.on('click', () => selectIndex(idx));
         markers.push(m);
       });
+      refreshSelectedMarker();
     }
 
     drawMarkersAndLine();
@@ -277,11 +281,18 @@
       const active = document.querySelector(`.event-card[data-idx='${index}']`);
       if (active) active.classList.add('active');
 
-      try { map.flyTo([e.lat, e.lon], Math.max(map.getZoom(), 6), { duration: 0.6 }); } catch (err) { map.panTo([e.lat, e.lon]); }
+      // 不改变缩放或移动视图，仅高亮所选标记
+      refreshSelectedMarker(index);
       updateInfoOverlay(e);
 
       slider.value = index;
       currentIndex = index;
+    }
+
+    function refreshSelectedMarker(index = currentIndex) {
+      markers.forEach((m, i) => {
+        m.setIcon(getMarkerIcon(i === index));
+      });
     }
 
     function selectIndex(idx) {
