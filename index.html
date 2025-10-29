@@ -124,15 +124,38 @@
     .leaflet-popup {
       display: none !important;
     }
+
     /* 自定义圆点标记样式（带白色环） */
-    .leaflet-div-icon { background: transparent; border: none; }
-    .marker-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%;
-      background: #fff; border: 3px solid var(--mc, #8B5CF6);
-      box-shadow: 0 0 0 5px rgba(255,255,255,0.98), 0 2px 8px rgba(0,0,0,0.28); }
-    .marker-blue   { background: #3B82F6; }
-    .marker-purple { background: #8B5CF6; }
-    .marker-orange { background: #F59E0B; }
-    .marker-dot.selected { box-shadow: 0 0 0 8px rgba(255,255,255,0.98), 0 0 0 14px rgba(255,255,255,0.55), 0 0 14px var(--mc), 0 6px 18px rgba(0,0,0,0.28); }
+    .leaflet-div-icon {
+      background: transparent;
+      border: none;
+    }
+
+    .marker-dot {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      border: 3px solid var(--mc, #8B5CF6);
+      /* box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.98), 0 2px 8px rgba(0, 0, 0, 0.28); */
+    }
+
+    .marker-blue {
+      background: #3B82F6;
+    }
+
+    .marker-purple {
+      background: #8B5CF6;
+    }
+
+    .marker-orange {
+      background: #F59E0B;
+    }
+
+    .marker-dot.selected {
+      box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.98), 0 0 0 14px rgba(255, 255, 255, 0.55), 0 0 14px var(--mc), 0 6px 18px rgba(0, 0, 0, 0.28);
+    }
   </style>
 </head>
 
@@ -145,7 +168,7 @@
       <div class="controls">
         <select id="personSelect" style="padding:6px 8px; border-radius:6px; border:1px solid #ddd;">
           <option value="鲁迅">鲁迅</option>
-          <option value="示例人物">示例人物</option>
+          <option value="毛泽东">毛泽东</option>
         </select>
         <button id="play" class="play-btn">播放</button>
         <div style="flex:1">
@@ -181,11 +204,21 @@
         { year: 1927, age: 46, place: '厦门/广州', lat: 24.4798, lon: 118.0895, title: '教学/发表', detail: '在厦门等地从事教学与创作（示例）。' },
         { year: 1936, age: 55, place: '上海', lat: 31.2304, lon: 121.4737, title: '逝世', detail: '1936年逝世于上海。' },
       ],
-      '示例人物': [
-        { year: 1990, age: 0, place: '成都', lat: 30.5728, lon: 104.0668, title: '出生', detail: '出生于成都（示例数据）。' },
-        { year: 2008, age: 18, place: '北京', lat: 39.9042, lon: 116.4074, title: '入读大学', detail: '在北京就读本科（示例数据）。' },
-        { year: 2014, age: 24, place: '上海', lat: 31.2304, lon: 121.4737, title: '工作', detail: '在上海开始职业生涯（示例数据）。' },
-        { year: 2020, age: 30, place: '深圳', lat: 22.5431, lon: 114.0579, title: '调任', detail: '调任至深圳（示例数据）。' },
+      '毛泽东': [
+        { year: 1893, age: 0, place: '湘潭·韶山', lat: 27.922, lon: 112.528, title: '出生', detail: '出生于湖南省湘潭县韶山冲。' },
+        { year: 1918, age: 25, place: '长沙', lat: 28.228, lon: 112.939, title: '毕业于湖南一师', detail: '毕业于湖南省立第一师范学校，参与新民学会活动。' },
+        { year: 1921, age: 28, place: '上海', lat: 31.2304, lon: 121.4737, title: '参加党的成立会议', detail: '参与中国共产党第一次全国代表大会相关活动（示例）。' },
+        { year: 1927, age: 34, place: '井冈山', lat: 26.572, lon: 114.169, title: '建立革命根据地', detail: '在井冈山建立根据地（示例）。' },
+        { year: 1931, age: 38, place: '瑞金', lat: 25.885, lon: 116.027, title: '中央苏区时期', detail: '在瑞金等地开展工作（示例）。' },
+        { year: 1934, age: 41, place: '赣州', lat: 25.831, lon: 114.934, title: '长征出发', detail: '从赣南出发进行长征（示例）。' },
+        { year: 1935, age: 42, place: '遵义', lat: 27.706, lon: 106.937, title: '遵义会议', detail: '长征途中在遵义召开会议，确立新的领导（示例）。' },
+        { year: 1935, age: 42, place: '赤水', lat: 28.587, lon: 105.694, title: '四渡赤水', detail: '长征途中策略机动（示例）。' },
+        { year: 1935, age: 42, place: '延安', lat: 36.596, lon: 109.490, title: '到达延安', detail: '到达陕北延安，从事革命与建设活动（示例）。' },
+        { year: 1945, age: 52, place: '重庆', lat: 29.563, lon: 106.551, title: '重庆谈判', detail: '赴重庆开展有关谈判（示例）。' },
+        { year: 1948, age: 55, place: '西柏坡', lat: 38.347, lon: 114.139, title: '西柏坡时期', detail: '在西柏坡指挥若干重要战役（示例）。' },
+        { year: 1949, age: 56, place: '北京', lat: 39.9042, lon: 116.4074, title: '开国典礼', detail: '中华人民共和国成立于北京（示例）。' },
+        { year: 1959, age: 66, place: '庐山', lat: 29.570, lon: 115.990, title: '赴庐山活动', detail: '在庐山开展相关会议与活动（示例）。' },
+        { year: 1976, age: 83, place: '北京', lat: 39.9042, lon: 116.4074, title: '逝世', detail: '在北京逝世（示例）。' },
       ],
     };
     let currentPerson = '鲁迅';
@@ -218,13 +251,13 @@
     // 不同人物的样式定义（标记颜色与轨迹颜色）
     const personStyles = {
       '鲁迅': { markerColor: '#3B82F6', lineColor: '#93C5FD' },
-      '示例人物': { markerColor: '#F59E0B', lineColor: '#FCD34D' },
+      '毛泽东': { markerColor: '#EF4444', lineColor: '#FCA5A5' },
     };
 
     function getMarkerIcon(selected = false) {
       const color = (personStyles[currentPerson]?.markerColor) || '#8B5CF6';
       const selectedClass = selected ? ' selected' : '';
-      return L.divIcon({ className: 'marker-icon', html: `<span class="marker-dot${selectedClass}" style="--mc:${color}"></span>`, iconSize: [16,16], iconAnchor: [8,8] });
+      return L.divIcon({ className: 'marker-icon', html: `<span class="marker-dot${selectedClass}" style="--mc:${color}"></span>`, iconSize: [16, 16], iconAnchor: [8, 8] });
     }
 
     function drawMarkersAndLine() {
@@ -301,7 +334,7 @@
       if (!coords.length) return;
       if (coords.length === 1) { map.setView(coords[0], 10); return; }
       const bounds = L.latLngBounds(coords);
-      try { map.fitBounds(bounds, { padding: [60, 60], maxZoom: 8 }); } catch (_) {}
+      try { map.fitBounds(bounds, { padding: [60, 60], maxZoom: 8 }); } catch (_) { }
     }
 
     function selectIndex(idx) {
