@@ -124,6 +124,13 @@
     .leaflet-popup {
       display: none !important;
     }
+    /* 自定义圆点标记样式（带白色环） */
+    .leaflet-div-icon { background: transparent; border: none; }
+    .marker-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid rgba(0,0,0,0.35); box-shadow: 0 0 0 4px rgba(255,255,255,0.95); }
+    .marker-blue   { background: #3B82F6; }
+    .marker-purple { background: #8B5CF6; }
+    .marker-orange { background: #F59E0B; }
   </style>
 </head>
 
@@ -206,6 +213,17 @@
     let markers = [];
     let polyline = null;
 
+    // 不同人物的样式定义（标记颜色与轨迹颜色）
+    const personStyles = {
+      '鲁迅': { markerClass: 'marker-blue',   lineColor: '#93C5FD' },
+      '示例人物': { markerClass: 'marker-orange', lineColor: '#FCD34D' },
+    };
+
+    function getMarkerIcon() {
+      const cls = (personStyles[currentPerson]?.markerClass) || 'marker-purple';
+      return L.divIcon({ className: 'marker-icon', html: `<span class="marker-dot ${cls}"></span>`, iconSize: [16,16], iconAnchor: [8,8] });
+    }
+
     function drawMarkersAndLine() {
       // 清理旧图层
       markers.forEach(m => { try { map.removeLayer(m); } catch (_) { } });
@@ -213,10 +231,11 @@
       if (polyline) { try { map.removeLayer(polyline); } catch (_) { } polyline = null; }
 
       const path = events.map(e => [e.lat, e.lon]);
-      polyline = L.polyline(path, { color: '#ff4d4f', weight: 4 }).addTo(map);
+      const color = (personStyles[currentPerson]?.lineColor) || '#A78BFA';
+      polyline = L.polyline(path, { color, weight: 4, opacity: 0.85, dashArray: '6 6' }).addTo(map);
 
       events.forEach((e, idx) => {
-        const m = L.marker([e.lat, e.lon]).addTo(map);
+        const m = L.marker([e.lat, e.lon], { icon: getMarkerIcon() }).addTo(map);
         m.on('click', () => selectIndex(idx));
         markers.push(m);
       });
@@ -224,12 +243,7 @@
 
     drawMarkersAndLine();
 
-    events.forEach((e, idx) => {
-      const m = L.marker([e.lat, e.lon]).addTo(map);
-      m.bindPopup(`<div style="min-width:200px"><strong>${e.year} · ${e.title}</strong><div class="small" style="margin-top:6px">${e.place} · 年龄：${e.age}</div><div style="margin-top:8px">${e.detail}</div></div>`);
-      m.on('click', () => selectIndex(idx));
-      markers.push(m);
-    });
+    // 旧的重复标记创建与弹窗绑定已移除，统一由 drawMarkersAndLine 管理
 
     function renderList() {
       eventsList.innerHTML = '';
