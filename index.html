@@ -249,7 +249,7 @@
 
     // 初始化地图（Leaflet）
     status.textContent = '初始化地图...';
-    const map = L.map('map');
+    const map = L.map('map', { zoomControl: false });
     map.setView([34, 110], 4);
     const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
