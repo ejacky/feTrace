@@ -243,6 +243,7 @@
         markers.push(m);
       });
       refreshSelectedMarker();
+      fitToEvents();
     }
 
     drawMarkersAndLine();
@@ -293,6 +294,14 @@
       markers.forEach((m, i) => {
         m.setIcon(getMarkerIcon(i === index));
       });
+    }
+
+    function fitToEvents() {
+      const coords = events.map(e => [e.lat, e.lon]);
+      if (!coords.length) return;
+      if (coords.length === 1) { map.setView(coords[0], 10); return; }
+      const bounds = L.latLngBounds(coords);
+      try { map.fitBounds(bounds, { padding: [60, 60], maxZoom: 8 }); } catch (_) {}
     }
 
     function selectIndex(idx) {
