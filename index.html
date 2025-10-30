@@ -197,183 +197,9 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     // 多人物事件数据（示例）
-    const people = {
-      '鲁迅': [
-        { year: 1881, age: 0, place: '绍兴', lat: 29.995, lon: 120.586, title: '出生', detail: '周树人（鲁迅）出生于浙江绍兴的周家台门。' },
-        { year: 1902, age: 21, place: '东京', lat: 35.6895, lon: 139.6917, title: '到东京留学', detail: '赴日本弘文学院学习医学，后转文科。' },
-        { year: 1904, age: 23, place: '仙台', lat: 38.2682, lon: 140.8694, title: '转学仙台医专', detail: '曾在仙台医学专门学校学习，后弃医从文。' },
-        { year: 1909, age: 28, place: '杭州', lat: 30.2741, lon: 120.1551, title: '任教于浙江两级师范学堂', detail: '回国后在杭州等地任教。' },
-        { year: 1918, age: 37, place: '北京', lat: 39.9042, lon: 116.4074, title: '发表重要作品', detail: '在北京从事文学活动并发表重要作品。' },
-        { year: 1927, age: 46, place: '厦门/广州', lat: 24.4798, lon: 118.0895, title: '教学/发表', detail: '在厦门等地从事教学与创作（示例）。' },
-        { year: 1936, age: 55, place: '上海', lat: 31.2304, lon: 121.4737, title: '逝世', detail: '1936年逝世于上海。' },
-      ],
-      '周作人': [
-        {
-          "year": 1885,
-          "age": 0,
-          "place": "浙江·紹興",
-          "lat": 30.003,
-          "lon": 120.582,
-          "title": "出生",
-          "detail": "1月16日（清光緒十年），出生於浙江紹興。"
-        },
-        {
-          "year": 1898,
-          "age": 13,
-          "place": "南京",
-          "lat": 32.041,
-          "lon": 118.777,
-          "title": "求學",
-          "detail": "與兄魯迅（周樹人）一同考入南京江南水師學堂。"
-        },
-        {
-          "year": 1906,
-          "age": 21,
-          "place": "日本·東京",
-          "lat": 35.689,
-          "lon": 139.692,
-          "title": "留學",
-          "detail": "赴日本留學，改習外國語。"
-        },
-        {
-          "year": 1909,
-          "age": 24,
-          "place": "日本·東京",
-          "lat": 35.689,
-          "lon": 139.692,
-          "title": "結婚",
-          "detail": "在日本與羽太信子結婚。"
-        },
-        {
-          "year": 1912,
-          "age": 27,
-          "place": "浙江·紹興",
-          "lat": 30.003,
-          "lon": 120.582,
-          "title": "歸國",
-          "detail": "辛亥革命後歸國，在紹興等地任職。"
-        },
-        {
-          "year": 1917,
-          "age": 32,
-          "place": "北京",
-          "lat": 39.904,
-          "lon": 116.407,
-          "title": "任教",
-          "detail": "應蔡元培之邀，到北京大學任文科教授，講授歐洲文學史。"
-        },
-        {
-          "year": 1918,
-          "age": 33,
-          "place": "北京",
-          "lat": 39.904,
-          "lon": 116.407,
-          "title": "新文化運動",
-          "detail": "開始撰寫白話文作品，成為新文化運動的重要代表人物。"
-        },
-        {
-          "year": 1923,
-          "age": 38,
-          "place": "北京",
-          "lat": 39.904,
-          "lon": 116.407,
-          "title": "兄弟失和",
-          "detail": "與魯迅發生衝突，搬出八道灣故居，兄弟從此永絕往來。"
-        },
-        {
-          "year": 1937,
-          "age": 52,
-          "place": "北京",
-          "lat": 39.904,
-          "lon": 116.407,
-          "title": "留京",
-          "detail": "盧溝橋事變後，接受校方囑託留守北平。"
-        },
-        {
-          "year": 1939,
-          "age": 54,
-          "place": "北京",
-          "lat": 39.904,
-          "lon": 116.407,
-          "title": "出任偽職",
-          "detail": "接受汪精衛政權邀請，出任偽職，擔任教育總署督辦等。"
-        },
-        {
-          "year": 1945,
-          "age": 60,
-          "place": "南京",
-          "lat": 32.041,
-          "lon": 118.777,
-          "title": "被捕",
-          "detail": "抗日戰爭勝利後，被國民政府以漢奸罪名逮捕，羈押於南京。"
-        },
-        {
-          "year": 1949,
-          "age": 64,
-          "place": "北平",
-          "lat": 39.904,
-          "lon": 116.407,
-          "title": "獲釋回京",
-          "detail": "獲總統李宗仁特赦，回到北平（後改為北京）。"
-        },
-        {
-          "year": 1953,
-          "age": 68,
-          "place": "北京",
-          "lat": 39.904,
-          "lon": 116.407,
-          "title": "專事譯作",
-          "detail": "受到處分，此後在家專事翻譯和寫作。"
-        },
-        {
-          "year": 1967,
-          "age": 82,
-          "place": "北京",
-          "lat": 39.904,
-          "lon": 116.407,
-          "title": "逝世",
-          "detail": "5月6日，在北京驟然逝世，享年83歲。"
-        }
-      ],
-      '毛泽东': [
-        { year: 1893, age: 0, place: '湘潭·韶山', lat: 27.922, lon: 112.528, title: '出生', detail: '出生于湖南省湘潭县韶山冲。' },
-        { year: 1918, age: 25, place: '长沙', lat: 28.228, lon: 112.939, title: '毕业于湖南一师', detail: '毕业于湖南省立第一师范学校，参与新民学会活动。' },
-        { year: 1921, age: 28, place: '上海', lat: 31.2304, lon: 121.4737, title: '参加党的成立会议', detail: '参与中国共产党第一次全国代表大会相关活动（示例）。' },
-        { year: 1927, age: 34, place: '井冈山', lat: 26.572, lon: 114.169, title: '建立革命根据地', detail: '在井冈山建立根据地（示例）。' },
-        { year: 1931, age: 38, place: '瑞金', lat: 25.885, lon: 116.027, title: '中央苏区时期', detail: '在瑞金等地开展工作（示例）。' },
-        { year: 1934, age: 41, place: '赣州', lat: 25.831, lon: 114.934, title: '长征出发', detail: '从赣南出发进行长征（示例）。' },
-        { year: 1935, age: 42, place: '遵义', lat: 27.706, lon: 106.937, title: '遵义会议', detail: '长征途中在遵义召开会议，确立新的领导（示例）。' },
-        { year: 1935, age: 42, place: '赤水', lat: 28.587, lon: 105.694, title: '四渡赤水', detail: '长征途中策略机动（示例）。' },
-        { year: 1935, age: 42, place: '延安', lat: 36.596, lon: 109.490, title: '到达延安', detail: '到达陕北延安，从事革命与建设活动（示例）。' },
-        { year: 1945, age: 52, place: '重庆', lat: 29.563, lon: 106.551, title: '重庆谈判', detail: '赴重庆开展有关谈判（示例）。' },
-        { year: 1948, age: 55, place: '西柏坡', lat: 38.347, lon: 114.139, title: '西柏坡时期', detail: '在西柏坡指挥若干重要战役（示例）。' },
-        { year: 1949, age: 56, place: '北京', lat: 39.9042, lon: 116.4074, title: '开国典礼', detail: '中华人民共和国成立于北京（示例）。' },
-        { year: 1959, age: 66, place: '庐山', lat: 29.570, lon: 115.990, title: '赴庐山活动', detail: '在庐山开展相关会议与活动（示例）。' },
-        { year: 1976, age: 83, place: '北京', lat: 39.9042, lon: 116.4074, title: '逝世', detail: '在北京逝世（示例）。' },
-      ],
-      '列宁': [
-        { year: 1870, age: 0, place: '辛比尔斯克（今乌里扬诺夫斯克）', lat: 54.319, lon: 48.377, title: '出生', detail: '出生于俄罗斯辛比尔斯克。' },
-        { year: 1895, age: 25, place: '圣彼得堡', lat: 59.934, lon: 30.335, title: '参与革命活动', detail: '参与工人运动与革命活动。' },
-        { year: 1897, age: 27, place: '舒申斯科耶（西伯利亚）', lat: 53.330, lon: 92.620, title: '流放西伯利亚', detail: '被流放至西伯利亚舒申斯科耶。' },
-        { year: 1900, age: 30, place: '慕尼黑', lat: 48.135, lon: 11.582, title: '流亡欧洲', detail: '在慕尼黑进行出版与组织工作。' },
-        { year: 1902, age: 32, place: '伦敦', lat: 51.507, lon: -0.128, title: '在伦敦活动', detail: '继续组织与宣传活动。' },
-        { year: 1903, age: 33, place: '日内瓦', lat: 46.204, lon: 6.143, title: '日内瓦时期', detail: '在瑞士参与出版与会议。' },
-        { year: 1905, age: 35, place: '圣彼得堡', lat: 59.934, lon: 30.335, title: '革命活动加剧', detail: '返回俄国参与活动。' },
-        { year: 1917, age: 47, place: '彼得格勒（圣彼得堡）', lat: 59.934, lon: 30.335, title: '十月革命', detail: '在彼得格勒领导十月革命。' },
-        { year: 1918, age: 48, place: '莫斯科', lat: 55.7558, lon: 37.6173, title: '迁至莫斯科', detail: '政府迁至莫斯科。' },
-        { year: 1923, age: 53, place: '戈尔基·列宁近郊', lat: 55.568, lon: 37.738, title: '疗养', detail: '在莫斯科近郊戈尔基疗养。' },
-        { year: 1924, age: 54, place: '戈尔基·列宁近郊', lat: 55.568, lon: 37.738, title: '逝世', detail: '在戈尔基逝世。' },
-      ],
-      '老子': [
-        { year: '约前571', age: '0', place: '楚·苦县（今河南鹿邑）', lat: 33.860, lon: 115.486, title: '传说出生', detail: '传为出生于楚国苦县厉乡（今河南鹿邑）。' },
-        { year: '约前520', age: '约51', place: '洛阳', lat: 34.619, lon: 112.454, title: '周守藏室史', detail: '据传在周王室担任史官，整理典籍。' },
-        { year: '约前515', age: '约56', place: '函谷关（灵宝）', lat: 34.555, lon: 110.889, title: '出关著书', detail: '在函谷关写下《道德经》，后西去（传说）。' },
-        { year: '约前500', age: '约71', place: '关中·长安（今西安）', lat: 34.265, lon: 108.954, title: '西行传道', detail: '传至关中传播思想（传说）。' },
-        { year: '约前480', age: '约91', place: '河南鹿邑·太清宫', lat: 33.843, lon: 115.574, title: '晚年传说', detail: '太清宫为后世纪念之地（传说）。' },
-      ],
-    };
+    let people = {};
     let currentPerson = '毛泽东';
-    let events = people[currentPerson];
+    let events = [];
 
     const eventsList = document.getElementById('eventsList');
     const slider = document.getElementById('slider');
@@ -382,7 +208,7 @@
     const status = document.getElementById('mapStatus');
     let playTimer = null;
     let currentIndex = 0;
-    slider.max = events.length - 1;
+    slider.max = 0;
 
     // 初始化地图（Leaflet）
     status.textContent = '初始化地图...';
@@ -400,13 +226,7 @@
     let polyline = null;
 
     // 不同人物的样式定义（标记颜色与轨迹颜色）
-    const personStyles = {
-      '鲁迅': { markerColor: '#3B82F6', lineColor: '#93C5FD' },
-      '周作人': { markerColor: '#8B5CF6', lineColor: '#C7B4F8' },
-      '毛泽东': { markerColor: '#EF4444', lineColor: '#FCA5A5' },
-      '列宁': { markerColor: '#14B8A6', lineColor: '#99F6E4' },
-      '老子': { markerColor: '#22C55E', lineColor: '#86EFAC' },
-    };
+    let personStyles = {};
 
     function getMarkerIcon(selected = false) {
       const color = (personStyles[currentPerson]?.markerColor) || '#8B5CF6';
@@ -433,7 +253,7 @@
       fitToEvents();
     }
 
-    drawMarkersAndLine();
+    // 初始不绘制，等待数据加载
 
     // 旧的重复标记创建与弹窗绑定已移除，统一由 drawMarkersAndLine 管理
 
@@ -450,7 +270,7 @@
         eventsList.appendChild(div);
       });
     }
-    renderList();
+    // 初始不渲染列表，等待数据加载
 
     function updateInfoOverlay(e) {
       const infoEl = document.getElementById('infoOverlay');
@@ -543,8 +363,41 @@
       if (playTimer) stopPlay(); else startPlay();
     });
 
-    // 默认展示第一个事件
-    updateUI(0);
+    async function initData() {
+      try {
+        const resp = await fetch('people.json');
+        const data = await resp.json();
+        // 构建映射
+        people = {};
+        personStyles = {};
+        (data.persons || []).forEach(p => {
+          people[p.name] = p.events || [];
+          if (p.style) personStyles[p.name] = p.style;
+        });
+        const names = Object.keys(people);
+        if (!names.length) return;
+
+        // 构建下拉选项
+        const personSelect = document.getElementById('personSelect');
+        personSelect.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
+        currentPerson = names.includes(currentPerson) ? currentPerson : names[0];
+        personSelect.value = currentPerson;
+
+        // 更新数据与 UI
+        events = people[currentPerson];
+        slider.max = Math.max(0, events.length - 1);
+        document.getElementById('personTitle').textContent = `${currentPerson}的一生轨迹示例`;
+        renderList();
+        drawMarkersAndLine();
+        updateUI(0);
+      } catch (e) {
+        console.error('加载 people.json 失败：', e);
+        const statusEl = document.getElementById('mapStatus');
+        if (statusEl) statusEl.textContent = '数据加载失败';
+      }
+    }
+
+    initData();
   </script>
 </body>
 
