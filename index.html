@@ -170,6 +170,8 @@
           <option value="毛泽东">毛泽东</option>
           <option value="列宁">列宁</option>
           <option value="鲁迅">鲁迅</option>
+          <option value="周作人">周作人</option>
+          <option value="老子">老子</option>
         </select>
         <button id="play" class="play-btn">播放</button>
         <div style="flex:1">
@@ -205,6 +207,134 @@
         { year: 1927, age: 46, place: '厦门/广州', lat: 24.4798, lon: 118.0895, title: '教学/发表', detail: '在厦门等地从事教学与创作（示例）。' },
         { year: 1936, age: 55, place: '上海', lat: 31.2304, lon: 121.4737, title: '逝世', detail: '1936年逝世于上海。' },
       ],
+      '周作人': [
+        {
+          "year": 1885,
+          "age": 0,
+          "place": "浙江·紹興",
+          "lat": 30.003,
+          "lon": 120.582,
+          "title": "出生",
+          "detail": "1月16日（清光緒十年），出生於浙江紹興。"
+        },
+        {
+          "year": 1898,
+          "age": 13,
+          "place": "南京",
+          "lat": 32.041,
+          "lon": 118.777,
+          "title": "求學",
+          "detail": "與兄魯迅（周樹人）一同考入南京江南水師學堂。"
+        },
+        {
+          "year": 1906,
+          "age": 21,
+          "place": "日本·東京",
+          "lat": 35.689,
+          "lon": 139.692,
+          "title": "留學",
+          "detail": "赴日本留學，改習外國語。"
+        },
+        {
+          "year": 1909,
+          "age": 24,
+          "place": "日本·東京",
+          "lat": 35.689,
+          "lon": 139.692,
+          "title": "結婚",
+          "detail": "在日本與羽太信子結婚。"
+        },
+        {
+          "year": 1912,
+          "age": 27,
+          "place": "浙江·紹興",
+          "lat": 30.003,
+          "lon": 120.582,
+          "title": "歸國",
+          "detail": "辛亥革命後歸國，在紹興等地任職。"
+        },
+        {
+          "year": 1917,
+          "age": 32,
+          "place": "北京",
+          "lat": 39.904,
+          "lon": 116.407,
+          "title": "任教",
+          "detail": "應蔡元培之邀，到北京大學任文科教授，講授歐洲文學史。"
+        },
+        {
+          "year": 1918,
+          "age": 33,
+          "place": "北京",
+          "lat": 39.904,
+          "lon": 116.407,
+          "title": "新文化運動",
+          "detail": "開始撰寫白話文作品，成為新文化運動的重要代表人物。"
+        },
+        {
+          "year": 1923,
+          "age": 38,
+          "place": "北京",
+          "lat": 39.904,
+          "lon": 116.407,
+          "title": "兄弟失和",
+          "detail": "與魯迅發生衝突，搬出八道灣故居，兄弟從此永絕往來。"
+        },
+        {
+          "year": 1937,
+          "age": 52,
+          "place": "北京",
+          "lat": 39.904,
+          "lon": 116.407,
+          "title": "留京",
+          "detail": "盧溝橋事變後，接受校方囑託留守北平。"
+        },
+        {
+          "year": 1939,
+          "age": 54,
+          "place": "北京",
+          "lat": 39.904,
+          "lon": 116.407,
+          "title": "出任偽職",
+          "detail": "接受汪精衛政權邀請，出任偽職，擔任教育總署督辦等。"
+        },
+        {
+          "year": 1945,
+          "age": 60,
+          "place": "南京",
+          "lat": 32.041,
+          "lon": 118.777,
+          "title": "被捕",
+          "detail": "抗日戰爭勝利後，被國民政府以漢奸罪名逮捕，羈押於南京。"
+        },
+        {
+          "year": 1949,
+          "age": 64,
+          "place": "北平",
+          "lat": 39.904,
+          "lon": 116.407,
+          "title": "獲釋回京",
+          "detail": "獲總統李宗仁特赦，回到北平（後改為北京）。"
+        },
+        {
+          "year": 1953,
+          "age": 68,
+          "place": "北京",
+          "lat": 39.904,
+          "lon": 116.407,
+          "title": "專事譯作",
+          "detail": "受到處分，此後在家專事翻譯和寫作。"
+        },
+        {
+          "year": 1967,
+          "age": 82,
+          "place": "北京",
+          "lat": 39.904,
+          "lon": 116.407,
+          "title": "逝世",
+          "detail": "5月6日，在北京驟然逝世，享年83歲。"
+        }
+      ],
       '毛泽东': [
         { year: 1893, age: 0, place: '湘潭·韶山', lat: 27.922, lon: 112.528, title: '出生', detail: '出生于湖南省湘潭县韶山冲。' },
         { year: 1918, age: 25, place: '长沙', lat: 28.228, lon: 112.939, title: '毕业于湖南一师', detail: '毕业于湖南省立第一师范学校，参与新民学会活动。' },
@@ -233,6 +363,13 @@
         { year: 1918, age: 48, place: '莫斯科', lat: 55.7558, lon: 37.6173, title: '迁至莫斯科', detail: '政府迁至莫斯科。' },
         { year: 1923, age: 53, place: '戈尔基·列宁近郊', lat: 55.568, lon: 37.738, title: '疗养', detail: '在莫斯科近郊戈尔基疗养。' },
         { year: 1924, age: 54, place: '戈尔基·列宁近郊', lat: 55.568, lon: 37.738, title: '逝世', detail: '在戈尔基逝世。' },
+      ],
+      '老子': [
+        { year: '约前571', age: '0', place: '楚·苦县（今河南鹿邑）', lat: 33.860, lon: 115.486, title: '传说出生', detail: '传为出生于楚国苦县厉乡（今河南鹿邑）。' },
+        { year: '约前520', age: '约51', place: '洛阳', lat: 34.619, lon: 112.454, title: '周守藏室史', detail: '据传在周王室担任史官，整理典籍。' },
+        { year: '约前515', age: '约56', place: '函谷关（灵宝）', lat: 34.555, lon: 110.889, title: '出关著书', detail: '在函谷关写下《道德经》，后西去（传说）。' },
+        { year: '约前500', age: '约71', place: '关中·长安（今西安）', lat: 34.265, lon: 108.954, title: '西行传道', detail: '传至关中传播思想（传说）。' },
+        { year: '约前480', age: '约91', place: '河南鹿邑·太清宫', lat: 33.843, lon: 115.574, title: '晚年传说', detail: '太清宫为后世纪念之地（传说）。' },
       ],
     };
     let currentPerson = '毛泽东';
@@ -265,8 +402,10 @@
     // 不同人物的样式定义（标记颜色与轨迹颜色）
     const personStyles = {
       '鲁迅': { markerColor: '#3B82F6', lineColor: '#93C5FD' },
+      '周作人': { markerColor: '#8B5CF6', lineColor: '#C7B4F8' },
       '毛泽东': { markerColor: '#EF4444', lineColor: '#FCA5A5' },
       '列宁': { markerColor: '#14B8A6', lineColor: '#99F6E4' },
+      '老子': { markerColor: '#22C55E', lineColor: '#86EFAC' },
     };
 
     function getMarkerIcon(selected = false) {
