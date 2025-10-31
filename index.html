@@ -464,12 +464,14 @@
 
     async function initData() {
       try {
-        const resp = await fetch('people.json');
-        const data = await resp.json();
+        // 仅从 Python 接口获取数据
+        const resp = await fetch('http://localhost:8001/api/people');
+        const source = await resp.json();
+
         // 构建映射
         people = {};
         personStyles = {};
-        (data.persons || []).forEach(p => {
+        (source?.persons || []).forEach(p => {
           people[p.name] = p.events || [];
           if (p.style) personStyles[p.name] = p.style;
         });
@@ -488,9 +490,9 @@
         // 初始化建议列表（显示全部或空查询）
         filterAndShow('');
       } catch (e) {
-        console.error('加载 people.json 失败：', e);
+        console.error('接口加载失败：', e);
         const statusEl = document.getElementById('mapStatus');
-        if (statusEl) statusEl.textContent = '数据加载失败';
+        if (statusEl) statusEl.textContent = '接口加载失败';
       }
     }
 
