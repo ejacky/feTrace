@@ -59,6 +59,40 @@
       margin: 12px 0;
     }
 
+    /* 搜索下拉样式 */
+    .search-wrap {
+      position: relative;
+      min-width: 180px;
+      flex: 0 0 220px;
+    }
+    .search-input {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      box-sizing: border-box;
+    }
+    .suggest-list {
+      position: absolute;
+      left: 0; right: 0;
+      top: calc(100% + 4px);
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      max-height: 240px;
+      overflow: auto;
+      display: none;
+      z-index: 1000;
+    }
+    .suggest-item {
+      padding: 8px 10px;
+      cursor: pointer;
+    }
+    .suggest-item:hover, .suggest-item.active {
+      background: #f5f8ff;
+    }
+
     .timeline {
       width: 100%;
     }
@@ -166,13 +200,10 @@
       <div class="small">原型：时间轴 + 地图联动。示例数据仅供演示，请在发布前校对。</div>
 
       <div class="controls">
-        <select id="personSelect" style="padding:6px 8px; border-radius:6px; border:1px solid #ddd;">
-          <option value="毛泽东">毛泽东</option>
-          <option value="列宁">列宁</option>
-          <option value="鲁迅">鲁迅</option>
-          <option value="周作人">周作人</option>
-          <option value="老子">老子</option>
-        </select>
+        <div class="search-wrap">
+          <input id="personSearch" class="search-input" placeholder="搜索人物…" autocomplete="off" />
+          <div id="searchList" class="suggest-list"></div>
+        </div>
         <button id="play" class="play-btn">播放</button>
         <div style="flex:1">
           <input id="slider" class="timeline" type="range" min="0" max="6" value="0" step="1" />
@@ -195,6 +226,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
     // 多人物事件数据（示例）
     let people = {};
@@ -227,6 +259,9 @@
 
     // 不同人物的样式定义（标记颜色与轨迹颜色）
     let personStyles = {};
+    let allNames = [];
+    let filteredNames = [];
+    let activeSuggestIndex = -1;
 
     function getMarkerIcon(selected = false) {
       const color = (personStyles[currentPerson]?.markerColor) || '#8B5CF6';
@@ -240,6 +275,7 @@
       markers = [];
       if (polyline) { try { map.removeLayer(polyline); } catch (_) { } polyline = null; }
 
+      if (!events.length) { return; }
       const path = events.map(e => [e.lat, e.lon]);
       const color = (personStyles[currentPerson]?.lineColor) || '#A78BFA';
       polyline = L.polyline(path, { color, weight: 4, opacity: 0.85, dashArray: '6 6' }).addTo(map);
@@ -259,6 +295,17 @@
 
     function renderList() {
       eventsList.innerHTML = '';
+      if (!events.length) {
+        const div = document.createElement('div');
+        div.className = 'event-card';
+        div.innerHTML = `<div style="font-weight:600">暂无事件数据</div>
+                         <div class="event-meta">请从搜索框选择人物或补充数据</div>`;
+        eventsList.appendChild(div);
+        yearLabel.textContent = '—';
+        const infoEl = document.getElementById('infoOverlay');
+        infoEl.textContent = '暂无事件数据';
+        return;
+      }
       events.forEach((e, idx) => {
         const div = document.createElement('div');
         div.className = 'event-card';
@@ -323,21 +370,73 @@
     });
 
     function setPerson(name) {
-      if (!people[name]) return;
       currentPerson = name;
-      events = people[name];
-      slider.max = events.length - 1;
+      events = people[name] || [];
+      slider.max = Math.max(0, events.length - 1);
       document.getElementById('personTitle').textContent = `${name}的一生轨迹示例`;
       renderList();
       drawMarkersAndLine();
-      updateUI(0);
+      if (events.length) updateUI(0);
     }
 
-    const personSelect = document.getElementById('personSelect');
-    personSelect.value = currentPerson;
-    personSelect.addEventListener('change', (ev) => {
-      setPerson(ev.target.value);
+    // 搜索建议逻辑
+    const searchInput = document.getElementById('personSearch');
+    const suggestEl = document.getElementById('searchList');
+    function renderSuggestions(list) {
+      if (!list.length) { suggestEl.style.display = 'none'; suggestEl.innerHTML = ''; return; }
+      suggestEl.style.display = 'block';
+      suggestEl.innerHTML = list.map((n, i) => `<div class="suggest-item${i===activeSuggestIndex?' active':''}" data-name="${n}">${n}</div>`).join('');
+      suggestEl.querySelectorAll('.suggest-item').forEach(item => {
+        item.addEventListener('click', () => selectPerson(item.dataset.name));
+      });
+    }
+    function filterAndShow(q) {
+      const term = (q || '').trim().toLowerCase();
+      filteredNames = allNames.filter(n => n.toLowerCase().includes(term)).slice(0, 60);
+      activeSuggestIndex = -1;
+      renderSuggestions(filteredNames);
+    }
+    function selectPerson(name) {
+      searchInput.value = name;
+      suggestEl.style.display = 'none';
+      setPerson(name);
+    }
+    searchInput.addEventListener('input', (ev) => filterAndShow(ev.target.value));
+    searchInput.addEventListener('focus', (ev) => filterAndShow(ev.target.value));
+    searchInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'ArrowDown') { activeSuggestIndex = Math.min(filteredNames.length - 1, activeSuggestIndex + 1); renderSuggestions(filteredNames); ev.preventDefault(); }
+      else if (ev.key === 'ArrowUp') { activeSuggestIndex = Math.max(0, activeSuggestIndex - 1); renderSuggestions(filteredNames); ev.preventDefault(); }
+      else if (ev.key === 'Enter') { if (activeSuggestIndex >= 0) { selectPerson(filteredNames[activeSuggestIndex]); } else if (searchInput.value.trim()) { selectPerson(searchInput.value.trim()); } }
+      else if (ev.key === 'Escape') { suggestEl.style.display = 'none'; }
     });
+    document.addEventListener('click', (ev) => {
+      if (!suggestEl.contains(ev.target) && ev.target !== searchInput) suggestEl.style.display = 'none';
+    });
+
+    async function loadExcelNames() {
+      try {
+        const resp = await fetch('doc/peoples.xls');
+        const buf = await resp.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+        let nameCol = 0;
+        const header = rows[0] || [];
+        for (let i = 0; i < header.length; i++) {
+          const h = String(header[i] || '').toLowerCase();
+          if (h.includes('姓名') || h.includes('人物') || h.includes('name') || h.includes('人名')) { nameCol = i; break; }
+        }
+        const names = [];
+        for (let r = 1; r < rows.length; r++) {
+          const cell = rows[r][nameCol];
+          if (typeof cell === 'string' && cell.trim()) names.push(cell.trim());
+        }
+        return Array.from(new Set(names));
+      } catch (e) {
+        console.error('加载 Excel 名单失败：', e);
+        return [];
+      }
+    }
 
     function startPlay() {
       if (playTimer) return;
@@ -374,22 +473,20 @@
           people[p.name] = p.events || [];
           if (p.style) personStyles[p.name] = p.style;
         });
-        const names = Object.keys(people);
-        if (!names.length) return;
-
-        // 构建下拉选项
-        const personSelect = document.getElementById('personSelect');
-        personSelect.innerHTML = names.map(n => `<option value="${n}">${n}</option>`).join('');
-        currentPerson = names.includes(currentPerson) ? currentPerson : names[0];
-        personSelect.value = currentPerson;
+        const jsonNames = Object.keys(people);
+        const excelNames = await loadExcelNames();
+        allNames = Array.from(new Set([ ...excelNames, ...jsonNames ]));
 
         // 更新数据与 UI
-        events = people[currentPerson];
+        currentPerson = jsonNames.includes(currentPerson) ? currentPerson : (jsonNames[0] || allNames[0] || '');
+        events = people[currentPerson] || [];
         slider.max = Math.max(0, events.length - 1);
-        document.getElementById('personTitle').textContent = `${currentPerson}的一生轨迹示例`;
+        document.getElementById('personTitle').textContent = `${currentPerson || '人物'}的一生轨迹示例`;
         renderList();
         drawMarkersAndLine();
-        updateUI(0);
+        if (events.length) updateUI(0);
+        // 初始化建议列表（显示全部或空查询）
+        filterAndShow('');
       } catch (e) {
         console.error('加载 people.json 失败：', e);
         const statusEl = document.getElementById('mapStatus');
