@@ -415,25 +415,12 @@
 
     async function loadExcelNames() {
       try {
-        const resp = await fetch('doc/peoples.xls');
-        const buf = await resp.arrayBuffer();
-        const wb = XLSX.read(buf, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-        let nameCol = 0;
-        const header = rows[0] || [];
-        for (let i = 0; i < header.length; i++) {
-          const h = String(header[i] || '').toLowerCase();
-          if (h.includes('姓名') || h.includes('人物') || h.includes('name') || h.includes('人名')) { nameCol = i; break; }
-        }
-        const names = [];
-        for (let r = 1; r < rows.length; r++) {
-          const cell = rows[r][nameCol];
-          if (typeof cell === 'string' && cell.trim()) names.push(cell.trim());
-        }
-        return Array.from(new Set(names));
+        const resp = await fetch('http://localhost:8001/api/names');
+        const list = await resp.json();
+        if (Array.isArray(list)) return list;
+        return [];
       } catch (e) {
-        console.error('加载 Excel 名单失败：', e);
+        console.error('加载姓名列表失败：', e);
         return [];
       }
     }

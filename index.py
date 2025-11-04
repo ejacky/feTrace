@@ -12,10 +12,25 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
 from urllib.parse import urlparse, parse_qs
+from typing import List, Dict, Any, Optional
+
+ROOT = os.path.dirname(__file__)
+DOC_DIR = os.path.join(ROOT, 'doc')
+
+try:
+    import xlrd  # 解析 .xls
+except Exception:
+    xlrd = None
+
+# 内存缓存
+CACHE: Dict[str, Any] = {
+    'people': None,      # 完整 people 数据（dict，含 persons）
+    'names': [],         # 合并后的姓名列表（excel + people.json）
+}
 
 
 def read_people_json():
-    path = os.path.join(os.path.dirname(__file__), 'people.json')
+    path = os.path.join(ROOT, 'people.json')
     if not os.path.exists(path):
         return None
     try:
@@ -117,7 +132,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == '/api/people':
-            data = read_people_json()
+            data = CACHE.get('people')
             if not data or is_empty(data):
                 payload = FALLBACK
             else:
@@ -132,10 +147,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._set_headers(400)
                 self.wfile.write(json.dumps({"error": "missing name"}, ensure_ascii=False).encode('utf-8'))
                 return
-
-            source = read_people_json()
-            if not source or is_empty(source):
-                source = FALLBACK
+            source = CACHE.get('people') or FALLBACK
             persons = (source or {}).get('persons') or []
             found = None
             for p in persons:
@@ -147,6 +159,11 @@ class Handler(BaseHTTPRequestHandler):
                 found = {"name": name, "style": None, "events": []}
             self._set_headers(200)
             self.wfile.write(json.dumps(found, ensure_ascii=False).encode('utf-8'))
+        elif parsed.path == '/api/names':
+            # 返回合并的姓名列表（Excel + people.json），由内存缓存提供
+            names = CACHE.get('names') or []
+            self._set_headers(200)
+            self.wfile.write(json.dumps(names, ensure_ascii=False).encode('utf-8'))
         else:
             # 静态文件渲染：支持 / 、/index.html 以及项目内其他资源
             if parsed.path in ('/', ''):
@@ -156,10 +173,83 @@ class Handler(BaseHTTPRequestHandler):
             self._serve_file(fs_path)
 
 
+def _load_excel_names() -> List[str]:
+    names: List[str] = []
+    # 优先使用 doc/peoples.xls；否则选择 doc 目录下首个 .xls 文件
+    candidates: List[str] = []
+    preferred = os.path.join(DOC_DIR, 'peoples.xls')
+    if os.path.exists(preferred):
+        candidates.append(preferred)
+    if os.path.isdir(DOC_DIR):
+        for f in os.listdir(DOC_DIR):
+            if f.lower().endswith('.xls'):
+                p = os.path.join(DOC_DIR, f)
+                if p not in candidates:
+                    candidates.append(p)
+    if not candidates or not xlrd:
+        return []
+    path = candidates[0]
+    try:
+        wb = xlrd.open_workbook(path)
+        sh = wb.sheet_by_index(0)
+        # 寻找姓名列
+        name_col = 0
+        if sh.nrows:
+            header = [str(sh.cell_value(0, c)).strip().lower() for c in range(sh.ncols)]
+            for i, h in enumerate(header):
+                if ('姓名' in h) or ('人物' in h) or ('人名' in h) or ('name' in h):
+                    name_col = i
+                    break
+        # 读取非空姓名
+        for r in range(1, sh.nrows):
+            val = sh.cell_value(r, name_col)
+            if isinstance(val, str) and val.strip():
+                names.append(val.strip())
+    except Exception:
+        return []
+    # 去重
+    seen = set()
+    uniq = []
+    for n in names:
+        low = n.lower()
+        if low in seen:
+            continue
+        seen.add(low)
+        uniq.append(n)
+    return uniq
+
+
+def preload_cache():
+    # 预加载 people.json
+    people_data = read_people_json()
+    CACHE['people'] = people_data if (people_data and not is_empty(people_data)) else FALLBACK
+    # 预加载 Excel 名单
+    excel_names = _load_excel_names()
+    # 合并 people.json 的人名
+    json_names = []
+    try:
+        json_names = [p.get('name') for p in (CACHE['people'] or {}).get('persons', []) if p.get('name')]
+    except Exception:
+        json_names = []
+    merged = []
+    seen = set()
+    for n in (excel_names + json_names):
+        if not n:
+            continue
+        low = str(n).lower()
+        if low in seen:
+            continue
+        seen.add(low)
+        merged.append(n)
+    CACHE['names'] = merged
+
+
 def run(server_class=HTTPServer, handler_class=Handler):
     port = int(os.environ.get('PORT', '8001'))
     server_address = ('', port)
     try:
+        # 启动前预加载数据到内存
+        preload_cache()
         httpd = server_class(server_address, handler_class)
         print(f"API server listening on http://localhost:{port}/api/people")
         httpd.serve_forever()
