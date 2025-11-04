@@ -464,35 +464,56 @@
 
     async function initData() {
       try {
-        // 仅从 Python 接口获取数据
-        const resp = await fetch('http://localhost:8001/api/people');
-        const source = await resp.json();
-
-        // 构建映射
-        people = {};
-        personStyles = {};
-        (source?.persons || []).forEach(p => {
-          people[p.name] = p.events || [];
-          if (p.style) personStyles[p.name] = p.style;
-        });
-        const jsonNames = Object.keys(people);
+        // 只加载搜索建议（Excel），不请求全量人物数据
         const excelNames = await loadExcelNames();
-        allNames = Array.from(new Set([ ...excelNames, ...jsonNames ]));
+        allNames = Array.from(new Set(excelNames));
 
-        // 更新数据与 UI
-        currentPerson = jsonNames.includes(currentPerson) ? currentPerson : (jsonNames[0] || allNames[0] || '');
-        events = people[currentPerson] || [];
-        slider.max = Math.max(0, events.length - 1);
-        document.getElementById('personTitle').textContent = `${currentPerson || '人物'}的一生轨迹示例`;
-        renderList();
-        drawMarkersAndLine();
-        if (events.length) updateUI(0);
+        // 选择默认人物并按需请求其数据
+        const defaultName = allNames.includes(currentPerson) ? currentPerson : (allNames[0] || '');
+        if (defaultName) {
+          await setPerson(defaultName);
+        } else {
+          // 无建议名单时，尝试按需请求一个常用示例名称
+          await setPerson('毛泽东');
+        }
         // 初始化建议列表（显示全部或空查询）
         filterAndShow('');
       } catch (e) {
-        console.error('接口加载失败：', e);
+        console.error('初始化失败：', e);
         const statusEl = document.getElementById('mapStatus');
-        if (statusEl) statusEl.textContent = '接口加载失败';
+        if (statusEl) statusEl.textContent = '初始化失败';
+      }
+    }
+
+    async function fetchPerson(name) {
+      const url = `http://localhost:8001/api/person?name=${encodeURIComponent(name)}`;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`接口返回错误：${resp.status}`);
+      return await resp.json();
+    }
+
+    async function setPerson(name) {
+      try {
+        currentPerson = name;
+        document.getElementById('personTitle').textContent = `${name}的一生轨迹示例`;
+        // 缓存命中直接使用，否则按需请求
+        if (!people[name]) {
+          const p = await fetchPerson(name);
+          people[name] = p.events || [];
+          if (p.style) personStyles[name] = p.style;
+        }
+        events = people[name] || [];
+        slider.max = Math.max(0, events.length - 1);
+        renderList();
+        drawMarkersAndLine();
+        if (events.length) updateUI(0); else {
+          const infoEl = document.getElementById('infoOverlay');
+          infoEl.textContent = '暂无事件数据';
+        }
+      } catch (e) {
+        console.error('加载人物失败：', e);
+        const statusEl = document.getElementById('mapStatus');
+        if (statusEl) statusEl.textContent = `加载 ${name} 失败`;
       }
     }
 

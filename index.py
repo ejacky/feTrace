@@ -11,7 +11,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 
 def read_people_json():
@@ -124,6 +124,29 @@ class Handler(BaseHTTPRequestHandler):
                 payload = data
             self._set_headers(200)
             self.wfile.write(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
+        elif parsed.path == '/api/person':
+            # 按需返回单个人物数据
+            qs = parse_qs(parsed.query or '')
+            name = (qs.get('name') or [''])[0].strip()
+            if not name:
+                self._set_headers(400)
+                self.wfile.write(json.dumps({"error": "missing name"}, ensure_ascii=False).encode('utf-8'))
+                return
+
+            source = read_people_json()
+            if not source or is_empty(source):
+                source = FALLBACK
+            persons = (source or {}).get('persons') or []
+            found = None
+            for p in persons:
+                if str(p.get('name', '')).strip() == name:
+                    found = p
+                    break
+            if not found:
+                # 不返回 404，统一返回空数据以便前端处理
+                found = {"name": name, "style": None, "events": []}
+            self._set_headers(200)
+            self.wfile.write(json.dumps(found, ensure_ascii=False).encode('utf-8'))
         else:
             # 静态文件渲染：支持 / 、/index.html 以及项目内其他资源
             if parsed.path in ('/', ''):
