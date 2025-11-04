@@ -62,14 +62,53 @@ FALLBACK = {
 
 
 class Handler(BaseHTTPRequestHandler):
-    def _set_headers(self, code=200, content_type='application/json'):
+    ROOT = os.path.dirname(__file__)
+    MIME = {
+        '.html': 'text/html; charset=utf-8',
+        '.js': 'application/javascript; charset=utf-8',
+        '.css': 'text/css; charset=utf-8',
+        '.json': 'application/json; charset=utf-8',
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.svg': 'image/svg+xml',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    }
+
+    def _set_headers(self, code=200, content_type='application/json', cors=True):
         self.send_response(code)
-        self.send_header('Content-Type', content_type + '; charset=utf-8')
-        # CORS 允许跨端口访问
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Content-Type', content_type)
+        if cors:
+            # CORS 允许跨端口访问（仅对 API 必须，静态资源也无害）
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+            self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
+
+    def _safe_path(self, url_path: str):
+        # 将 URL 路径安全映射到本地文件路径，防止目录穿越
+        rel = url_path.lstrip('/') or 'index.html'
+        fs_path = os.path.normpath(os.path.join(self.ROOT, rel))
+        if not fs_path.startswith(self.ROOT):
+            return None
+        return fs_path
+
+    def _serve_file(self, fs_path: str):
+        if not fs_path or not os.path.isfile(fs_path):
+            self._set_headers(404, 'text/plain; charset=utf-8', cors=False)
+            self.wfile.write(b'Not Found')
+            return
+        ext = os.path.splitext(fs_path)[1].lower()
+        ctype = self.MIME.get(ext, 'application/octet-stream')
+        try:
+            with open(fs_path, 'rb') as f:
+                data = f.read()
+            self._set_headers(200, ctype, cors=False)
+            self.wfile.write(data)
+        except Exception:
+            self._set_headers(500, 'text/plain; charset=utf-8', cors=False)
+            self.wfile.write(b'Internal Server Error')
 
     def do_OPTIONS(self):
         # 处理预检请求
@@ -86,8 +125,12 @@ class Handler(BaseHTTPRequestHandler):
             self._set_headers(200)
             self.wfile.write(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
         else:
-            self._set_headers(404)
-            self.wfile.write(json.dumps({"error": "not found"}, ensure_ascii=False).encode('utf-8'))
+            # 静态文件渲染：支持 / 、/index.html 以及项目内其他资源
+            if parsed.path in ('/', ''):
+                fs_path = self._safe_path('index.html')
+            else:
+                fs_path = self._safe_path(parsed.path)
+            self._serve_file(fs_path)
 
 
 def run(server_class=HTTPServer, handler_class=Handler):
