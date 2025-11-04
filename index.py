@@ -13,6 +13,8 @@ import json
 import os
 from urllib.parse import urlparse, parse_qs
 from typing import List, Dict, Any, Optional
+from deepseek import get_person_timeline
+import deepseek
 
 ROOT = os.path.dirname(__file__)
 DOC_DIR = os.path.join(ROOT, 'doc')
@@ -155,6 +157,12 @@ class Handler(BaseHTTPRequestHandler):
                     found = p
                     break
             if not found:
+                # 尝试从 deepseek.py 获取数据
+                try:
+                    found = deepseek.get_person_timeline(name)
+                except Exception:
+                    pass
+            if len(found.get('events', [])) == 0:
                 # 不返回 404，统一返回空数据以便前端处理
                 found = {"name": name, "style": None, "events": []}
             self._set_headers(200)
