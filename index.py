@@ -11,6 +11,8 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
+import threading
+import time
 from urllib.parse import urlparse, parse_qs
 from typing import List, Dict, Any, Optional
 from deepseek import get_person_timeline
@@ -28,7 +30,10 @@ except Exception:
 CACHE: Dict[str, Any] = {
     'people': None,      # 完整 people 数据（dict，含 persons）
     'names': [],         # 合并后的姓名列表（excel + people.json）
+    'dirty': False,      # 是否有待落盘的变更
 }
+
+CACHE_LOCK = threading.Lock()
 
 
 def read_people_json():
@@ -162,6 +167,37 @@ class Handler(BaseHTTPRequestHandler):
                     found = deepseek.get_person_timeline(name)
                 except Exception:
                     pass
+            # 若从 deepseek 获得有效数据，写入内存缓存并标记待落盘
+            if found and len(found.get('events', [])) > 0:
+                try:
+                    with CACHE_LOCK:
+                        base = CACHE.get('people') or FALLBACK
+                        persons = (base or {}).get('persons') or []
+                        # 以名字去重，大小写不敏感
+                        idx = None
+                        for i, p in enumerate(persons):
+                            if str(p.get('name', '')).strip().lower() == name.lower():
+                                idx = i
+                                break
+                        if idx is None:
+                            persons.append(found)
+                        else:
+                            persons[idx] = found
+                        # 回写到 CACHE['people']
+                        if base is FALLBACK:
+                            # 若当前 people 使用 FALLBACK，则生成新结构
+                            CACHE['people'] = { 'persons': persons }
+                        else:
+                            CACHE['people']['persons'] = persons
+                        # 更新 names 去重
+                        names = set([n.lower() for n in (CACHE.get('names') or [])])
+                        if name.lower() not in names:
+                            CACHE['names'].append(name)
+                        # 标记脏写
+                        CACHE['dirty'] = True
+                except Exception:
+                    # 缓存写入失败不影响响应
+                    pass
             if len(found.get('events', [])) == 0:
                 # 不返回 404，统一返回空数据以便前端处理
                 found = {"name": name, "style": None, "events": []}
@@ -250,6 +286,43 @@ def preload_cache():
         seen.add(low)
         merged.append(n)
     CACHE['names'] = merged
+    with CACHE_LOCK:
+        CACHE['dirty'] = False
+
+
+def _save_people_json_atomic(data: Dict[str, Any]):
+    # 原子写入 people.json：先写临时文件再替换
+    path = os.path.join(ROOT, 'people.json')
+    tmp = path + '.tmp'
+    try:
+        with open(tmp, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+    except Exception:
+        # 写入失败时尽量清理临时文件
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
+
+
+def _periodic_flush(interval_sec: int = 30):
+    # 后台线程：定期将内存中的 people 写入到 people.json
+    while True:
+        time.sleep(interval_sec)
+        try:
+            with CACHE_LOCK:
+                if not CACHE.get('dirty'):
+                    continue
+                people = CACHE.get('people') or FALLBACK
+                data = people if isinstance(people, dict) else { 'persons': [] }
+                # 重置脏标记，避免频繁写入；失败则在下次循环重试
+                CACHE['dirty'] = False
+            _save_people_json_atomic(data)
+        except Exception:
+            # 若失败，不抛出，下一次循环继续尝试
+            pass
 
 
 def run(server_class=HTTPServer, handler_class=Handler):
@@ -259,6 +332,9 @@ def run(server_class=HTTPServer, handler_class=Handler):
         # 启动前预加载数据到内存
         preload_cache()
         httpd = server_class(server_address, handler_class)
+        # 启动后台定时落盘线程（守护线程）
+        t = threading.Thread(target=_periodic_flush, kwargs={'interval_sec': 30}, daemon=True)
+        t.start()
         print(f"API server listening on http://localhost:{port}/api/people")
         httpd.serve_forever()
     except Exception as e:
