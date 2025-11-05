@@ -1,0 +1,182 @@
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial;
+}
+
+#app {
+  display: flex;
+}
+
+.sidebar {
+  width: 360px;
+  min-width: 260px;
+  max-width: 420px;
+  background: #fff;
+  border-right: 1px solid #eee;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.map-wrap {
+  flex: 1;
+  position: relative;
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+}
+
+.person-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.small {
+  font-size: 13px;
+  color: #666;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 12px 0;
+}
+
+/* 搜索下拉样式 */
+.search-wrap {
+  position: relative;
+  min-width: 180px;
+  flex: 0 0 220px;
+}
+.search-input {
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  box-sizing: border-box;
+}
+.suggest-list {
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(100% + 4px);
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  max-height: 240px;
+  overflow: auto;
+  display: none;
+  z-index: 1000;
+}
+.suggest-item {
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.suggest-item:hover, .suggest-item.active {
+  background: #f5f8ff;
+}
+
+.timeline {
+  width: 100%;
+}
+
+.event-card {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.event-card.active {
+  background: #f5f8ff;
+  border-color: #cfe0ff;
+}
+
+.event-meta {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.play-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #1976d2;
+  color: #fff;
+  cursor: pointer;
+}
+
+.play-btn.pause {
+  background: #555;
+}
+
+.attribution {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.overlay {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px 10px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+}
+
+.info-overlay {
+  top: 70px;
+  max-width: 360px;
+}
+
+.leaflet-popup {
+  display: none !important;
+}
+
+/* 自定义圆点标记样式（带白色环） */
+.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+
+.marker-dot {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--mc, #8B5CF6);
+  /* box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.98), 0 2px 8px rgba(0, 0, 0, 0.28); */
+}
+
+.marker-blue {
+  background: #3B82F6;
+}
+
+.marker-purple {
+  background: #8B5CF6;
+}
+
+.marker-orange {
+  background: #F59E0B;
+}
+
+.marker-dot.selected {
+  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.98), 0 0 0 14px rgba(255, 255, 255, 0.55), 0 0 14px var(--mc), 0 6px 18px rgba(0, 0, 0, 0.28);
+}

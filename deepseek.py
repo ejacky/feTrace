@@ -47,7 +47,7 @@ def _get_timeouts():
     # 从 config 获取超时，提供默认值
     try:
         connect = int(config.get('DEEPSEEK_CONNECT_TIMEOUT', 5))
-        read = int(config.get('DEEPSEEK_READ_TIMEOUT', 15))
+        read = int(config.get('DEEPSEEK_READ_TIMEOUT', 30))
         return (connect, read)
     except Exception:
         return (5, 15)
