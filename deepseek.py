@@ -8,6 +8,7 @@ DeepSeek API 访问工具
 import os
 import json
 from typing import Any, Dict, List, Optional
+import logging
 
 try:
     import requests  # 需通过 pip 安装：pip install requests
@@ -16,6 +17,14 @@ except Exception:
 
 ROOT = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(ROOT, 'config.json')
+
+# 模块级日志：避免重复添加处理器
+logger = logging.getLogger('deepseek')
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] deepseek: %(message)s'))
+    logger.addHandler(_handler)
+logger.setLevel(logging.INFO)
 
 
 def _load_config() -> Dict[str, Any]:
@@ -102,8 +111,12 @@ def get_person_timeline(name: str) -> Dict[str, Any]:
     - events 为数组，字段包含 year/age/place/lat/lon/title/detail（若缺失则尽量留空）
     """
     raw = query_celebrity_timeline(name)
-    # 错误或不可用时返回空数据，避免阻断前端
+    # 错误或不可用时返回空数据，避免阻断前端，并记录错误日志
     if 'error' in raw:
+        try:
+            logger.error("DeepSeek 请求失败：name=%s, error=%s", name, raw.get('error'))
+        except Exception:
+            pass
         return {"name": name, "style": None, "events": []}
 
     try:
@@ -114,6 +127,7 @@ def get_person_timeline(name: str) -> Dict[str, Any]:
         )
         events = _normalize_events(content)
     except Exception:
+        logger.warning("DeepSeek 响应解析失败，使用空事件：name=%s", name)
         events = []
 
     # 默认样式（粉色系），与现有页面风格保持一致
