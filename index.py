@@ -13,8 +13,10 @@ import json
 import os
 import threading
 import time
+import logging
 from urllib.parse import urlparse, parse_qs
 from typing import List, Dict, Any, Optional
+import config
 from deepseek import get_person_timeline
 import deepseek
 
@@ -138,15 +140,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path == '/api/people':
-            data = CACHE.get('people')
-            if not data or is_empty(data):
-                payload = FALLBACK
-            else:
-                payload = data
-            self._set_headers(200)
-            self.wfile.write(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
-        elif parsed.path == '/api/person':
+        if parsed.path == '/api/person':
             # 按需返回单个人物数据
             qs = parse_qs(parsed.query or '')
             name = (qs.get('name') or [''])[0].strip()
@@ -195,6 +189,7 @@ class Handler(BaseHTTPRequestHandler):
                             CACHE['names'].append(name)
                         # 标记脏写
                         CACHE['dirty'] = True
+                        logger.info("缓存已更新并标记落盘：name=%s, events=%d", name, len(found.get('events', [])))
                 except Exception:
                     # 缓存写入失败不影响响应
                     pass
@@ -320,26 +315,36 @@ def _periodic_flush(interval_sec: int = 30):
                 # 重置脏标记，避免频繁写入；失败则在下次循环重试
                 CACHE['dirty'] = False
             _save_people_json_atomic(data)
+            logger.info("已将缓存写入 people.json（周期=%ss，persons=%d）", interval_sec, len((data or {}).get('persons', [])))
         except Exception:
             # 若失败，不抛出，下一次循环继续尝试
-            pass
+            logger.error("写入 people.json 失败，将在下次周期重试")
 
 
 def run(server_class=HTTPServer, handler_class=Handler):
-    port = int(os.environ.get('PORT', '8001'))
+    # 日志配置
+    global logger
+    logger = logging.getLogger('api')
+    if not logger.handlers:
+        _h = logging.StreamHandler()
+        _h.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] api: %(message)s'))
+        logger.addHandler(_h)
+    logger.setLevel(logging.INFO)
+
+    port = config.get_port()
     server_address = ('', port)
     try:
         # 启动前预加载数据到内存
         preload_cache()
         httpd = server_class(server_address, handler_class)
-        # 启动后台定时落盘线程（守护线程）
-        t = threading.Thread(target=_periodic_flush, kwargs={'interval_sec': 30}, daemon=True)
+        # 启动后台定时落盘线程（守护线程），周期可配置
+        t = threading.Thread(target=_periodic_flush, kwargs={'interval_sec': config.get_flush_interval_sec()}, daemon=True)
         t.start()
-        print(f"API server listening on http://localhost:{port}/api/people")
+        logger.info("API server listening on http://localhost:%s/api/people", port)
         httpd.serve_forever()
     except Exception as e:
         # 显式打印错误，便于诊断启动失败
-        print("Failed to start API server:", repr(e))
+        logger.error("Failed to start API server: %s", repr(e))
 
 
 if __name__ == '__main__':

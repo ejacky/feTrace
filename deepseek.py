@@ -9,6 +9,7 @@ import os
 import json
 from typing import Any, Dict, List, Optional
 import logging
+import config
 
 try:
     import requests  # 需通过 pip 安装：pip install requests
@@ -27,22 +28,10 @@ if not logger.handlers:
 logger.setLevel(logging.INFO)
 
 
-def _load_config() -> Dict[str, Any]:
-    try:
-        with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception:
-        return {}
-
-
 def _get_api_key() -> Optional[str]:
-    # 优先读环境变量，其次配置文件
-    env_key = os.environ.get('DEEPSEEK_API_KEY')
-    if env_key:
-        return env_key.strip()
-    cfg = _load_config()
-    key = cfg.get('DEEPSEEK_API_KEY')
-    return key.strip() if isinstance(key, str) and key.strip() else None
+    # 统一从 config.py 获取
+    key = config.get_deepseek_api_key()
+    return key
 
 
 def _normalize_events(payload_text: str) -> List[Dict[str, Any]]:
