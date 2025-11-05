@@ -12,21 +12,18 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
 import threading
-import time
 import logging
-from urllib.parse import urlparse, parse_qs
-from typing import List, Dict, Any, Optional
+from urllib.parse import urlparse
+from typing import Dict, Any
 import config
-from deepseek import get_person_timeline
-import deepseek
+import routes
+from cache import Cache
 
 ROOT = os.path.dirname(__file__)
 DOC_DIR = os.path.join(ROOT, 'doc')
 
-try:
-    import xlrd  # 解析 .xls
-except Exception:
-    xlrd = None
+# 模块级缓存对象（封装）
+CACHE_OBJ = Cache()
 
 # 内存缓存
 CACHE: Dict[str, Any] = {
@@ -141,68 +138,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == '/api/person':
-            # 按需返回单个人物数据
-            qs = parse_qs(parsed.query or '')
-            name = (qs.get('name') or [''])[0].strip()
-            if not name:
-                self._set_headers(400)
-                self.wfile.write(json.dumps({"error": "missing name"}, ensure_ascii=False).encode('utf-8'))
-                return
-            source = CACHE.get('people') or FALLBACK
-            persons = (source or {}).get('persons') or []
-            found = None
-            for p in persons:
-                if str(p.get('name', '')).strip() == name:
-                    found = p
-                    break
-            if not found:
-                # 尝试从 deepseek.py 获取数据
-                try:
-                    found = deepseek.get_person_timeline(name)
-                except Exception:
-                    pass
-            # 若从 deepseek 获得有效数据，写入内存缓存并标记待落盘
-            if found and len(found.get('events', [])) > 0:
-                try:
-                    with CACHE_LOCK:
-                        base = CACHE.get('people') or FALLBACK
-                        persons = (base or {}).get('persons') or []
-                        # 以名字去重，大小写不敏感
-                        idx = None
-                        for i, p in enumerate(persons):
-                            if str(p.get('name', '')).strip().lower() == name.lower():
-                                idx = i
-                                break
-                        if idx is None:
-                            persons.append(found)
-                        else:
-                            persons[idx] = found
-                        # 回写到 CACHE['people']
-                        if base is FALLBACK:
-                            # 若当前 people 使用 FALLBACK，则生成新结构
-                            CACHE['people'] = { 'persons': persons }
-                        else:
-                            CACHE['people']['persons'] = persons
-                        # 更新 names 去重
-                        names = set([n.lower() for n in (CACHE.get('names') or [])])
-                        if name.lower() not in names:
-                            CACHE['names'].append(name)
-                        # 标记脏写
-                        CACHE['dirty'] = True
-                        logger.info("缓存已更新并标记落盘：name=%s, events=%d", name, len(found.get('events', [])))
-                except Exception:
-                    # 缓存写入失败不影响响应
-                    pass
-            if len(found.get('events', [])) == 0:
-                # 不返回 404，统一返回空数据以便前端处理
-                found = {"name": name, "style": None, "events": []}
-            self._set_headers(200)
-            self.wfile.write(json.dumps(found, ensure_ascii=False).encode('utf-8'))
+            routes.handle_person(self, CACHE_OBJ, FALLBACK, logger=logger)
         elif parsed.path == '/api/names':
-            # 返回合并的姓名列表（Excel + people.json），由内存缓存提供
-            names = CACHE.get('names') or []
-            self._set_headers(200)
-            self.wfile.write(json.dumps(names, ensure_ascii=False).encode('utf-8'))
+            routes.handle_names(self, CACHE_OBJ)
+        elif parsed.path == '/api/people':
+            routes.handle_people(self, CACHE_OBJ, FALLBACK)
         else:
             # 静态文件渲染：支持 / 、/index.html 以及项目内其他资源
             if parsed.path in ('/', ''):
@@ -212,113 +152,13 @@ class Handler(BaseHTTPRequestHandler):
             self._serve_file(fs_path)
 
 
-def _load_excel_names() -> List[str]:
-    names: List[str] = []
-    # 优先使用 doc/peoples.xls；否则选择 doc 目录下首个 .xls 文件
-    candidates: List[str] = []
-    preferred = os.path.join(DOC_DIR, 'peoples.xls')
-    if os.path.exists(preferred):
-        candidates.append(preferred)
-    if os.path.isdir(DOC_DIR):
-        for f in os.listdir(DOC_DIR):
-            if f.lower().endswith('.xls'):
-                p = os.path.join(DOC_DIR, f)
-                if p not in candidates:
-                    candidates.append(p)
-    if not candidates or not xlrd:
-        return []
-    path = candidates[0]
-    try:
-        wb = xlrd.open_workbook(path)
-        sh = wb.sheet_by_index(0)
-        # 寻找姓名列
-        name_col = 0
-        if sh.nrows:
-            header = [str(sh.cell_value(0, c)).strip().lower() for c in range(sh.ncols)]
-            for i, h in enumerate(header):
-                if ('姓名' in h) or ('人物' in h) or ('人名' in h) or ('name' in h):
-                    name_col = i
-                    break
-        # 读取非空姓名
-        for r in range(1, sh.nrows):
-            val = sh.cell_value(r, name_col)
-            if isinstance(val, str) and val.strip():
-                names.append(val.strip())
-    except Exception:
-        return []
-    # 去重
-    seen = set()
-    uniq = []
-    for n in names:
-        low = n.lower()
-        if low in seen:
-            continue
-        seen.add(low)
-        uniq.append(n)
-    return uniq
-
-
 def preload_cache():
-    # 预加载 people.json
-    people_data = read_people_json()
-    CACHE['people'] = people_data if (people_data and not is_empty(people_data)) else FALLBACK
-    # 预加载 Excel 名单
-    excel_names = _load_excel_names()
-    # 合并 people.json 的人名
-    json_names = []
-    try:
-        json_names = [p.get('name') for p in (CACHE['people'] or {}).get('persons', []) if p.get('name')]
-    except Exception:
-        json_names = []
-    merged = []
-    seen = set()
-    for n in (excel_names + json_names):
-        if not n:
-            continue
-        low = str(n).lower()
-        if low in seen:
-            continue
-        seen.add(low)
-        merged.append(n)
-    CACHE['names'] = merged
-    with CACHE_LOCK:
-        CACHE['dirty'] = False
+    # 封装后的缓存预加载（people 与 names）
+    CACHE_OBJ.preload(ROOT, DOC_DIR, FALLBACK)
 
-
-def _save_people_json_atomic(data: Dict[str, Any]):
-    # 原子写入 people.json：先写临时文件再替换
-    path = os.path.join(ROOT, 'people.json')
-    tmp = path + '.tmp'
-    try:
-        with open(tmp, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, path)
-    except Exception:
-        # 写入失败时尽量清理临时文件
-        try:
-            if os.path.exists(tmp):
-                os.remove(tmp)
-        except Exception:
-            pass
-
-
-def _periodic_flush(interval_sec: int = 30):
-    # 后台线程：定期将内存中的 people 写入到 people.json
-    while True:
-        time.sleep(interval_sec)
-        try:
-            with CACHE_LOCK:
-                if not CACHE.get('dirty'):
-                    continue
-                people = CACHE.get('people') or FALLBACK
-                data = people if isinstance(people, dict) else { 'persons': [] }
-                # 重置脏标记，避免频繁写入；失败则在下次循环重试
-                CACHE['dirty'] = False
-            _save_people_json_atomic(data)
-            logger.info("已将缓存写入 people.json（周期=%ss，persons=%d）", interval_sec, len((data or {}).get('persons', [])))
-        except Exception:
-            # 若失败，不抛出，下一次循环继续尝试
-            logger.error("写入 people.json 失败，将在下次周期重试")
+def _start_flush_background():
+    # 使用封装的缓存对象启动后台周期落盘线程
+    CACHE_OBJ.start_flush_thread(interval_sec=config.get_flush_interval_sec(), logger=logger)
 
 
 def run(server_class=HTTPServer, handler_class=Handler):
@@ -337,9 +177,8 @@ def run(server_class=HTTPServer, handler_class=Handler):
         # 启动前预加载数据到内存
         preload_cache()
         httpd = server_class(server_address, handler_class)
-        # 启动后台定时落盘线程（守护线程），周期可配置
-        t = threading.Thread(target=_periodic_flush, kwargs={'interval_sec': config.get_flush_interval_sec()}, daemon=True)
-        t.start()
+        # 启动后台定时落盘（封装线程）
+        _start_flush_background()
         logger.info("API server listening on http://localhost:%s/api/people", port)
         httpd.serve_forever()
     except Exception as e:
