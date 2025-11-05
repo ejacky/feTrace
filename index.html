@@ -404,10 +404,30 @@
     searchInput.addEventListener('input', (ev) => filterAndShow(ev.target.value));
     searchInput.addEventListener('focus', (ev) => filterAndShow(ev.target.value));
     searchInput.addEventListener('keydown', (ev) => {
-      if (ev.key === 'ArrowDown') { activeSuggestIndex = Math.min(filteredNames.length - 1, activeSuggestIndex + 1); renderSuggestions(filteredNames); ev.preventDefault(); }
-      else if (ev.key === 'ArrowUp') { activeSuggestIndex = Math.max(0, activeSuggestIndex - 1); renderSuggestions(filteredNames); ev.preventDefault(); }
-      else if (ev.key === 'Enter') { if (activeSuggestIndex >= 0) { selectPerson(filteredNames[activeSuggestIndex]); } else if (searchInput.value.trim()) { selectPerson(searchInput.value.trim()); } }
-      else if (ev.key === 'Escape') { suggestEl.style.display = 'none'; }
+      if (ev.key === 'ArrowDown') {
+        activeSuggestIndex = Math.min(filteredNames.length - 1, activeSuggestIndex + 1);
+        renderSuggestions(filteredNames);
+        ev.preventDefault();
+      } else if (ev.key === 'ArrowUp') {
+        activeSuggestIndex = Math.max(0, activeSuggestIndex - 1);
+        renderSuggestions(filteredNames);
+        ev.preventDefault();
+      } else if (ev.key === 'Enter') {
+        ev.preventDefault();
+        let name = '';
+        if (activeSuggestIndex >= 0) {
+          name = filteredNames[activeSuggestIndex] || '';
+        } else {
+          const typed = (searchInput.value || '').trim();
+          if (typed) name = typed; else if (filteredNames.length > 0) name = filteredNames[0];
+        }
+        if (name) {
+          selectPerson(name);
+          suggestEl.style.display = 'none';
+        }
+      } else if (ev.key === 'Escape') {
+        suggestEl.style.display = 'none';
+      }
     });
     document.addEventListener('click', (ev) => {
       if (!suggestEl.contains(ev.target) && ev.target !== searchInput) suggestEl.style.display = 'none';

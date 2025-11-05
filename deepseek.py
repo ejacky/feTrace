@@ -13,8 +13,15 @@ import config
 
 try:
     import requests  # 需通过 pip 安装：pip install requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+    from requests.exceptions import Timeout, RequestException
 except Exception:
     requests = None
+    HTTPAdapter = None
+    Retry = None
+    Timeout = Exception
+    RequestException = Exception
 
 ROOT = os.path.dirname(__file__)
 CONFIG_PATH = os.path.join(ROOT, 'config.json')
@@ -32,6 +39,70 @@ def _get_api_key() -> Optional[str]:
     # 统一从 config.py 获取
     key = config.get_deepseek_api_key()
     return key
+
+
+_SESSION = None
+
+def _get_timeouts():
+    # 从 config 获取超时，提供默认值
+    try:
+        connect = int(config.get('DEEPSEEK_CONNECT_TIMEOUT', 5))
+        read = int(config.get('DEEPSEEK_READ_TIMEOUT', 15))
+        return (connect, read)
+    except Exception:
+        return (5, 15)
+
+def _get_retry_params():
+    try:
+        total = int(config.get('DEEPSEEK_RETRY_TOTAL', 2))
+        connect = int(config.get('DEEPSEEK_RETRY_CONNECT', total))
+        read = int(config.get('DEEPSEEK_RETRY_READ', total))
+        status = int(config.get('DEEPSEEK_RETRY_STATUS', total))
+        backoff = float(config.get('DEEPSEEK_BACKOFF_FACTOR', 0.6))
+        return {
+            'total': total,
+            'connect': connect,
+            'read': read,
+            'status': status,
+            'backoff': backoff,
+        }
+    except Exception:
+        return {
+            'total': 2,
+            'connect': 2,
+            'read': 2,
+            'status': 2,
+            'backoff': 0.6,
+        }
+
+def _get_session():
+    """获取带重试的 Session（若可用）。"""
+    global _SESSION
+    if _SESSION is not None:
+        return _SESSION
+    if requests is None:
+        return None
+    s = requests.Session()
+    try:
+        if HTTPAdapter and Retry:
+            params = _get_retry_params()
+            retry = Retry(
+                total=params['total'],
+                connect=params['connect'],
+                read=params['read'],
+                status=params['status'],
+                backoff_factor=params['backoff'],
+                status_forcelist=[429, 500, 502, 503, 504],
+                allowed_methods=["POST"],
+            )
+            adapter = HTTPAdapter(max_retries=retry)
+            s.mount("https://", adapter)
+            s.mount("http://", adapter)
+    except Exception:
+        # 回退到无重试的 Session
+        pass
+    _SESSION = s
+    return s
 
 
 def _normalize_events(payload_text: str) -> List[Dict[str, Any]]:
@@ -86,10 +157,17 @@ def query_celebrity_timeline(celebrity_name: str) -> Dict[str, Any]:
     }
 
     try:
-        resp = requests.post(url, json=payload, headers=headers, timeout=30)
+        sess = _get_session()
+        if sess is None:
+            return {"error": "missing_requests"}
+        # 分离连接/读取超时，适度缩短阻塞
+        timeout = _get_timeouts()
+        resp = sess.post(url, json=payload, headers=headers, timeout=timeout)
         resp.raise_for_status()
         return resp.json()
-    except Exception as e:
+    except Timeout as e:
+        return {"error": f"timeout: {e}"}
+    except RequestException as e:
         return {"error": f"request_failed: {e}"}
 
 
@@ -125,6 +203,6 @@ def get_person_timeline(name: str) -> Dict[str, Any]:
 
 if __name__ == '__main__':
     # 简单自测：读取配置并尝试请求
-    who = os.environ.get('TEST_NAME', '毛晓彤')
+    who = os.environ.get('TEST_NAME', '毛主席')
     item = get_person_timeline(who)
     print(json.dumps(item, ensure_ascii=False, indent=2))
