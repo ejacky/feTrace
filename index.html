@@ -14,8 +14,6 @@
   <div id="app">
     <div class="sidebar">
       <div id="personTitle" class="person-title">人物轨迹示例</div>
-      <div class="small">原型：时间轴 + 地图联动。示例数据仅供演示，请在发布前校对。</div>
-
       <div class="controls">
         <div class="search-wrap">
           <input id="personSearch" class="search-input" placeholder="搜索人物…" autocomplete="off" />
@@ -31,12 +29,10 @@
       <div id="eventsList"></div>
 
       <div style="height:24px"></div>
-      <div class="small">说明：点击左侧事件卡或在地图上点击标记查看详情。底图使用 OpenStreetMap（无需密钥）。</div>
     </div>
 
     <div class="map-wrap">
       <div id="map"></div>
-      <div class="attribution">示例数据 · 底图：OpenStreetMap & Leaflet</div>
       <div id="topOverlay" class="overlay">地图状态：<span id="mapStatus">加载中…</span></div>
       <div id="infoOverlay" class="overlay info-overlay">请选择事件或点击地图标记查看详情</div>
     </div>
