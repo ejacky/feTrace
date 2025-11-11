@@ -174,8 +174,20 @@ function renderSuggestions(list) {
 }
 
 function filterAndShow(q) {
-  const term = (q || '').trim().toLowerCase();
-  state.filteredNames = state.allNames.filter(n => n.toLowerCase().includes(term)).slice(0, SUGGEST_LIMIT);
+  const typed = (q || '').trim();
+  const term = typed.toLowerCase();
+  let matches = state.allNames
+    .filter(n => n.toLowerCase().includes(term))
+    .slice(0, SUGGEST_LIMIT);
+  // 如果输入非空且不与已有名称完全匹配，则把输入项置于首位，便于点击提交查询
+  const existsExact = state.allNames.some(n => n.toLowerCase() === term);
+  if (typed && !existsExact) {
+    // 避免重复插入（若列表首项已等于输入则不需重复）
+    if (!matches.length || matches[0].toLowerCase() !== term) {
+      matches = [typed, ...matches];
+    }
+  }
+  state.filteredNames = matches;
   state.activeSuggestIndex = -1;
   renderSuggestions(state.filteredNames);
 }
@@ -246,6 +258,8 @@ function selectPerson(name) {
 
 function bindSuggestEvents() {
   DOM.searchInput.addEventListener('input', (ev) => filterAndShow(ev.target.value));
+  // 兼容中文输入法：在合成结束时刷新下拉，确保“未匹配输入”出现
+  DOM.searchInput.addEventListener('compositionend', (ev) => filterAndShow(ev.target.value));
   DOM.searchInput.addEventListener('focus', (ev) => filterAndShow(ev.target.value));
   DOM.searchInput.addEventListener('keydown', (ev) => {
     if (ev.key === 'ArrowDown') {
