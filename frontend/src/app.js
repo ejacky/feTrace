@@ -82,7 +82,7 @@ function updateInfoOverlay(e) {
 function updateUI(index) {
   if (index < 0 || index >= state.events.length) return;
   const e = state.events[index];
-  DOM.yearLabel.textContent = e.year;
+  if (DOM.yearLabel) DOM.yearLabel.textContent = e.year;
   document.querySelectorAll('.event-card').forEach(el => el.classList.remove('active'));
   const active = document.querySelector(`.event-card[data-idx='${index}']`);
   if (active) active.classList.add('active');
@@ -100,7 +100,7 @@ function renderList() {
     div.innerHTML = `<div style="font-weight:600">暂无事件数据</div>
                      <div class="event-meta">请从搜索框选择人物或补充数据</div>`;
     frag.appendChild(div);
-    DOM.yearLabel.textContent = '—';
+    if (DOM.yearLabel) DOM.yearLabel.textContent = '—';
     DOM.infoOverlay.textContent = '暂无事件数据';
   } else {
     state.events.forEach((e, idx) => {
