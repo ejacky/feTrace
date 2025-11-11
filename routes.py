@@ -17,6 +17,7 @@ def handle_person(handler, cache, fallback: Dict[str, Any], logger=None):
         handler._set_headers(400)
         handler.wfile.write(json.dumps({"error": "missing name"}, ensure_ascii=False).encode('utf-8'))
         return
+    logger.info("查询人物：name=%s", name)
     source = cache.get_people_or_fallback(fallback)
     persons = (source or {}).get('persons') or []
     found = None
