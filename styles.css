@@ -216,7 +216,7 @@ body.is-loading {
 .event-card { padding: 10px 12px; border: 1px solid #eee; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
 .event-card.active { border-color: #8B5CF6; box-shadow: 0 0 0 2px rgba(139,92,246,0.2); }
 .overlay { background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); backdrop-filter: blur(4px); }
-#loading-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 9999; background: rgba(33, 150, 243, 0.92); color: #fff; padding: 8px 16px; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+#loading-banner { position: fixed; left: 50%; top: 12px; transform: translateX(-50%); z-index: 9999; background: rgba(33, 150, 243, 0.92); color: #fff; padding: 8px 14px; border-radius: 18px; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); pointer-events: none; }
 @media (max-width: 900px) {
   #app { grid-template-columns: 1fr; height: auto; }
   .sidebar { position: relative; height: auto; overflow: visible; border-right: none; border-bottom: 1px solid #eee; }

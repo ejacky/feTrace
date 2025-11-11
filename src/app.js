@@ -88,7 +88,7 @@ function updateUI(index) {
   if (active) active.classList.add('active');
   refreshSelectedMarker(index);
   updateInfoOverlay(e);
-  DOM.slider.value = index;
+  if (DOM.slider) DOM.slider.value = index;
   setCurrentIndex(index);
 }
 
@@ -153,11 +153,13 @@ function handleEventListClick(e) {
 
 function bindUIEvents() {
   DOM.eventsList.addEventListener('click', handleEventListClick);
-  DOM.slider.addEventListener('input', (ev) => {
-    const idx = Number(ev.target.value);
-    updateUI(idx);
-    stopPlay();
-  });
+  if (DOM.slider) {
+    DOM.slider.addEventListener('input', (ev) => {
+      const idx = Number(ev.target.value);
+      updateUI(idx);
+      stopPlay();
+    });
+  }
   DOM.playBtn.addEventListener('click', () => {
     if (state.playTimer) stopPlay(); else startPlay();
   });
@@ -198,14 +200,16 @@ function setControlsDisabled(disabled) {
   if (DOM.playBtn) DOM.playBtn.disabled = !!disabled;
 }
 
-function showLoadingBanner(name) {
+function showLoadingBanner(name, hasCached) {
   let el = document.getElementById('loading-banner');
   if (!el) {
     el = document.createElement('div');
     el.id = 'loading-banner';
     document.body.appendChild(el);
   }
-  el.textContent = `正在加载 “${name}” 的人物轨迹… 当前显示为上次结果`;
+  el.textContent = hasCached
+    ? `正在加载 “${name}” 的人物轨迹… 当前显示为上次结果`
+    : `正在加载 “${name}” 的人物轨迹…`;
   document.body.classList.add('is-loading');
   document.body.setAttribute('aria-busy', 'true');
   setControlsDisabled(true);
@@ -224,10 +228,12 @@ async function loadPerson(name) {
     // 避免重复同名加载；设置加载态与横幅
     if (state.isLoading && state.pendingName === name) return;
     setLoadingState(true, name);
-    showLoadingBanner(name);
+    // 先判断缓存状态，用于确定横幅文案
+    const cached = state.peopleCache[name];
+    const hasCached = Array.isArray(cached) && cached.length > 0;
+    showLoadingBanner(name, hasCached);
     DOM.personTitle.textContent = `${name}的一生轨迹示例`;
     // 如果缓存为空（没有键）或为长度为 0 的数组，则强制重新请求，避免“同名重试不发请求”问题
-    const cached = state.peopleCache[name];
     const shouldRefetch = !cached || (Array.isArray(cached) && cached.length === 0);
     if (shouldRefetch) {
       const p = await fetchPerson(name);
@@ -235,7 +241,7 @@ async function loadPerson(name) {
     } else {
       setPersonData(name, state.peopleCache[name], state.personStyles[name]);
     }
-    DOM.slider.max = Math.max(0, state.events.length - 1);
+    if (DOM.slider) DOM.slider.max = Math.max(0, state.events.length - 1);
     renderList();
     drawMarkersAndLine();
     if (state.events.length) updateUI(0); else {
