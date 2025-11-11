@@ -107,12 +107,18 @@ body,
 }
 
 .play-btn {
-  padding: 8px 12px;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 13px;
   border-radius: 6px;
   border: none;
   background: #1976d2;
   color: #fff;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
 }
 
 .play-btn.pause {
@@ -200,3 +206,25 @@ body,
 body.is-loading {
   cursor: progress;
 }
+/* 布局增强与响应式 */
+#app { display: grid; grid-template-columns: 360px 1fr; gap: 0; height: 100vh; }
+.sidebar { background: #fafafa; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.map-wrap { position: relative; height: 100vh; }
+.person-title { position: sticky; top: 0; background: #fafafa; z-index: 2; padding: 12px 0; border-bottom: 1px solid #eee; }
+.controls { position: sticky; top: 48px; background: #fafafa; z-index: 2; padding: 10px 0; border-bottom: 1px solid #eee; }
+#eventsList { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 12px 0 24px; }
+.event-card { padding: 10px 12px; border: 1px solid #eee; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+.event-card.active { border-color: #8B5CF6; box-shadow: 0 0 0 2px rgba(139,92,246,0.2); }
+.overlay { background: rgba(255,255,255,0.7); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.06); backdrop-filter: blur(4px); }
+#loading-banner { position: fixed; top: 0; left: 0; right: 0; z-index: 9999; background: rgba(33, 150, 243, 0.92); color: #fff; padding: 8px 16px; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+@media (max-width: 900px) {
+  #app { grid-template-columns: 1fr; height: auto; }
+  .sidebar { position: relative; height: auto; overflow: visible; border-right: none; border-bottom: 1px solid #eee; }
+  .controls { top: 0; position: sticky; }
+  #eventsList { grid-template-columns: 1fr; }
+  .map-wrap { height: calc(100vh - 260px); }
+}
+/* 紧凑事件列表间距（覆盖规则） */
+#eventsList { gap: 6px; }
+.event-card { padding: 8px 10px; margin-bottom: 0; }
+.event-meta { margin-bottom: 4px; }
