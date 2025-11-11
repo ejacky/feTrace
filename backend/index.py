@@ -23,7 +23,7 @@ ROOT = os.path.dirname(__file__)  # 项目根目录
 # 文档目录优先使用 docs，否则回退为 doc（兼容旧结构）
 DATA_DIR = os.path.join(ROOT, 'data') if os.path.isdir(os.path.join(ROOT, 'data')) else os.path.join(ROOT, 'doc')
 
-PROJ_ROOT = os.path.dirname(ROOT)
+FRONTEND_ROOT =  os.path.join(os.path.dirname(ROOT), 'frontend')
 # 模块级缓存对象（封装）
 CACHE_OBJ = Cache()
 
@@ -112,9 +112,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def _safe_path(self, url_path: str):
         # 将 URL 路径安全映射到本地文件路径，防止目录穿越
-        rel = url_path.lstrip('/') or 'frontend/index.html'
-        fs_path = os.path.normpath(os.path.join(PROJ_ROOT, rel))
-        if not fs_path.startswith(PROJ_ROOT):
+        rel = url_path.lstrip('/') or 'index.html'
+        fs_path = os.path.normpath(os.path.join(FRONTEND_ROOT, rel))
+        if not fs_path.startswith(FRONTEND_ROOT):
             return None
         return fs_path
 
