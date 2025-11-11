@@ -214,7 +214,10 @@ async function loadPerson(name) {
     setLoadingState(true, name);
     showLoadingBanner(name);
     DOM.personTitle.textContent = `${name}的一生轨迹示例`;
-    if (!state.peopleCache[name]) {
+    // 如果缓存为空（没有键）或为长度为 0 的数组，则强制重新请求，避免“同名重试不发请求”问题
+    const cached = state.peopleCache[name];
+    const shouldRefetch = !cached || (Array.isArray(cached) && cached.length === 0);
+    if (shouldRefetch) {
       const p = await fetchPerson(name);
       setPersonData(name, p.events || [], p.style);
     } else {
