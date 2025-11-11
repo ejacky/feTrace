@@ -1,5 +1,5 @@
 import { fetchNames, fetchPerson } from './api.js';
-import { state, setPersonData, setCurrentIndex, setPlayTimer } from './state.js';
+import { state, setPersonData, setCurrentIndex, setPlayTimer, setLoadingState } from './state.js';
 
 // DOM 引用集中
 const DOM = {
@@ -180,8 +180,39 @@ function filterAndShow(q) {
   renderSuggestions(state.filteredNames);
 }
 
+// 轻量加载横幅与禁用控件
+function setControlsDisabled(disabled) {
+  if (DOM.searchInput) DOM.searchInput.disabled = !!disabled;
+  if (DOM.playBtn) DOM.playBtn.disabled = !!disabled;
+}
+
+function showLoadingBanner(name) {
+  let el = document.getElementById('loading-banner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loading-banner';
+    document.body.appendChild(el);
+  }
+  el.textContent = `正在加载 “${name}” 的人物轨迹… 当前显示为上次结果`;
+  document.body.classList.add('is-loading');
+  document.body.setAttribute('aria-busy', 'true');
+  setControlsDisabled(true);
+}
+
+function hideLoadingBanner() {
+  const el = document.getElementById('loading-banner');
+  if (el) el.remove();
+  document.body.classList.remove('is-loading');
+  document.body.removeAttribute('aria-busy');
+  setControlsDisabled(false);
+}
+
 async function loadPerson(name) {
   try {
+    // 避免重复同名加载；设置加载态与横幅
+    if (state.isLoading && state.pendingName === name) return;
+    setLoadingState(true, name);
+    showLoadingBanner(name);
     DOM.personTitle.textContent = `${name}的一生轨迹示例`;
     if (!state.peopleCache[name]) {
       const p = await fetchPerson(name);
@@ -198,6 +229,9 @@ async function loadPerson(name) {
   } catch (e) {
     console.error('加载人物失败：', e);
     if (DOM.status) DOM.status.textContent = `加载 ${name} 失败`;
+  } finally {
+    setLoadingState(false, null);
+    hideLoadingBanner();
   }
 }
 

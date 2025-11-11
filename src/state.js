@@ -11,6 +11,9 @@ export const state = {
   map: null,
   markers: [],
   polyline: null,
+  // 加载态
+  isLoading: false,
+  pendingName: null,
 };
 
 export function setPersonData(name, events, style) {
@@ -27,4 +30,9 @@ export function setCurrentIndex(i) {
 
 export function setPlayTimer(timer) {
   state.playTimer = timer;
+}
+
+export function setLoadingState(isLoading, pendingName = null) {
+  state.isLoading = !!isLoading;
+  state.pendingName = pendingName;
 }

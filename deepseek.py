@@ -323,6 +323,6 @@ def _augment_events(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 if __name__ == '__main__':
     # 简单自测：读取配置并尝试请求
-    who = os.environ.get('TEST_NAME', '朱德')
+    who = os.environ.get('TEST_NAME', '苏轼')
     item = get_person_timeline(who)
     print(json.dumps(item, ensure_ascii=False, indent=2))

@@ -180,3 +180,23 @@ body,
 .marker-dot.selected {
   box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.98), 0 0 0 14px rgba(255, 255, 255, 0.55), 0 0 14px var(--mc), 0 6px 18px rgba(0, 0, 0, 0.28);
 }
+
+/* 顶部加载横幅与加载态样式 */
+#loading-banner {
+  position: fixed;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  z-index: 9999;
+  background: rgba(33, 150, 243, 0.92);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 18px;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  pointer-events: none;
+}
+
+body.is-loading {
+  cursor: progress;
+}
