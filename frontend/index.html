@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>人物生平轨迹示例</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+  <link rel="stylesheet" href="./src/styles.css">
+</head>
+
+<body>
+  <div id="app">
+    <div class="sidebar">
+      <div id="personTitle" class="person-title">人物轨迹</div>
+      <div class="controls">
+        <div class="search-wrap">
+          <input id="personSearch" class="search-input" placeholder="搜索人物…" autocomplete="off" />
+          <div id="searchList" class="suggest-list"></div>
+        </div>
+        <button id="play" class="play-btn">播放</button>
+        
+        <div id="yearLabel" style="min-width:70px; text-align:right; font-weight:600;">1881</div>
+      </div>
+
+      <div id="eventsList"></div>
+
+      <div style="height:24px"></div>
+    </div>
+
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div id="topOverlay" class="overlay">地图状态：<span id="mapStatus">加载中…</span></div>
+      <div id="infoOverlay" class="overlay info-overlay">请选择事件或点击地图标记查看详情</div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="./src/app.js"></script>
+  <!-- 原内联脚本已迁移到模块 ./src/app.js，提高可维护性 -->
+  
+</body>
+
+</html>
