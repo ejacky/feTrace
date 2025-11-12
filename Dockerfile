@@ -2,9 +2,7 @@ FROM m.daocloud.io/docker.io/library/python:3.11-slim
 
 WORKDIR /app
 
-COPY backend/ ./backend/
-COPY frontend/ ./frontend/
-COPY requirements.txt ./requirements.txt
+COPY backend/ .
 
 # 提高超时并切换镜像源（可选：阿里、清华，二选一）
 ENV PIP_DEFAULT_TIMEOUT=120
@@ -16,4 +14,4 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip install --no-cache-dir -r requirements.txt --timeout 120
 
 EXPOSE 8001
-CMD ["python", "backend/index.py"]
+CMD ["python", "index.py"]
