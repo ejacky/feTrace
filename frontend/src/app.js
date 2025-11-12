@@ -23,11 +23,48 @@ function initMap() {
   DOM.status.textContent = '初始化地图...';
   state.map = L.map('map', { zoomControl: false });
   state.map.setView([34, 110], 4);
-  const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  });
+
+  // 支持通过全局覆盖（如在 index.html 里 window.FETRACE_TILE_URL = '...'）
+  const overrideUrl = window.FETRACE_TILE_URL;
+
+  const providers = overrideUrl ? [
+    { url: overrideUrl, options: { maxZoom: 19, attribution: '' } }
+  ] : [
+    // 1) OSM 官方（可能国内不可达）
+    {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      options: { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }
+    },
+    // 2) Carto 底图（通常国内可访问）
+    {
+      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      options: { maxZoom: 19, attribution: '&copy; CARTO' }
+    },
+    // 3) GeoQ（ArcGIS 瓦片，国内可访问；注意许可），HTTP
+    {
+      url: 'http://map.geoq.cn/arcgis/rest/services/ChinaOnlineStreetPurplishBlue/MapServer/tile/{z}/{y}/{x}',
+      options: { maxZoom: 18, attribution: 'Map © GeoQ' }
+    }
+  ];
+
+  let idx = 0;
+  let errors = 0;
+  let tiles = L.tileLayer(providers[idx].url, providers[idx].options);
   tiles.addTo(state.map);
+
+  tiles.on('tileerror', () => {
+    errors += 1;
+    // 连续一定数量的失败则切换底图源
+    if (errors >= 4 && idx < providers.length - 1) {
+      try { state.map.removeLayer(tiles); } catch (_) {}
+      idx += 1;
+      tiles = L.tileLayer(providers[idx].url, providers[idx].options);
+      tiles.addTo(state.map);
+      errors = 0;
+      DOM.status.textContent = '已切换地图底图源（国内可访问）';
+    }
+  });
+
   DOM.status.textContent = '地图加载成功';
 }
 
