@@ -1,4 +1,9 @@
-export const API_BASE = 'http://localhost:8001/api';
+export const API_BASE = (() => {
+  const originBase = `${window.location.origin}/api`;
+  const isLocalPreview = (location.hostname === 'localhost');
+  const previewFallback = 'http://localhost:8001/api';
+  return window.FETRACE_API_BASE || (isLocalPreview ? previewFallback : originBase);
+})();
 
 async function httpGetJSON(url) {
   const resp = await fetch(url);
