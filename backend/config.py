@@ -11,7 +11,7 @@ import json
 from typing import Any, Dict, Optional
 
 ROOT = os.path.dirname(__file__)
-CONFIG_PATH = os.path.join(ROOT, 'config.json')
+CONFIG_PATH = os.path.join(ROOT, 'config/config.json')
 
 
 def _load_config() -> Dict[str, Any]:
