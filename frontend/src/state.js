@@ -2,7 +2,7 @@ export const state = {
   peopleCache: {},       // name -> events[]
   personStyles: {},      // name -> style
   events: [],            // 当前展示的事件
-  currentPerson: '毛泽东',
+  currentPerson: '赵今麦',
   currentIndex: 0,
   playTimer: null,
   allNames: [],

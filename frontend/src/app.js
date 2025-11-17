@@ -342,7 +342,7 @@ async function init() {
 
   // 加载搜索建议（后端 names）
   state.allNames = Array.from(new Set(await fetchNames()));
-  const defaultName = state.allNames.includes(state.currentPerson) ? state.currentPerson : (state.allNames[0] || '毛泽东');
+  const defaultName = state.allNames.includes(state.currentPerson) ? state.currentPerson : (state.allNames[0] || '赵今麦');
   // 首次进入时将输入框设置为默认人物，避免出现空输入的下拉框
   if (DOM.searchInput) DOM.searchInput.value = defaultName;
   await loadPerson(defaultName);

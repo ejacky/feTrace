@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 import logging
 import config
 import re
+import time
 
 try:
     import requests  # 需通过 pip 安装：pip install requests
@@ -47,8 +48,8 @@ _SESSION = None
 def _get_timeouts():
     # 从 config 获取超时，提供默认值
     try:
-        connect = int(config.get('DEEPSEEK_CONNECT_TIMEOUT', 5))
-        read = int(config.get('DEEPSEEK_READ_TIMEOUT', 30))
+        connect = int(config.get('DEEPSEEK_CONNECT_TIMEOUT', 15))
+        read = int(config.get('DEEPSEEK_READ_TIMEOUT', 40))
         return (connect, read)
     except Exception:
         return (5, 15)
@@ -199,13 +200,35 @@ def query_celebrity_timeline(celebrity_name: str) -> Dict[str, Any]:
         if sess is None:
             return {"error": "missing_requests"}
         timeout = _get_timeouts()
+        start = time.monotonic()
         resp = sess.post(url, json=payload, headers=headers, timeout=timeout)
         resp.raise_for_status()
+        elapsed_ms = int((time.monotonic() - start) * 1000)
+        try:
+            logger.info("DeepSeek POST耗时: %dms", elapsed_ms)
+        except Exception:
+            pass
         return resp.json()
     except Timeout as e:
-        return {"error": f"timeout: {e}"}
+        elapsed_ms = int((time.monotonic() - start) * 1000) if 'start' in locals() else None
+        try:
+            if elapsed_ms is not None:
+                logger.error("DeepSeek POST超时: %dms, %s", elapsed_ms, e)
+            else:
+                logger.error("DeepSeek POST超时: %s", e)
+        except Exception:
+            pass
+        return {"error": f"timeout: {e}", "duration_ms": elapsed_ms}
     except RequestException as e:
-        return {"error": f"request_failed: {e}"}
+        elapsed_ms = int((time.monotonic() - start) * 1000) if 'start' in locals() else None
+        try:
+            if elapsed_ms is not None:
+                logger.error("DeepSeek POST失败: %dms, %s", elapsed_ms, e)
+            else:
+                logger.error("DeepSeek POST失败: %s", e)
+        except Exception:
+            pass
+        return {"error": f"request_failed: {e}", "duration_ms": elapsed_ms}
 
 
 def get_person_timeline(name: str) -> Dict[str, Any]:
