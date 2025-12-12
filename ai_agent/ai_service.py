@@ -1,6 +1,6 @@
 """
 AI Agent Service - 提供人物时间线数据的 HTTP 服务
-基于原始的 deepseek.py 实现，增加 REST API 接口
+支持 DeepSeek 和 Kimi (Moonshot) 两种 AI 提供商，可通过配置切换
 """
 
 import json
@@ -18,13 +18,23 @@ load_dotenv()
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
+# AI 提供商配置
+AI_PROVIDER = os.environ.get('AI_PROVIDER', 'kimi').lower()  # 默认使用 kimi
+
+# 导入两个 AI 提供商模块
 try:
-    from deepseek import get_person_timeline as original_get_person_timeline
+    from deepseek import get_person_timeline as deepseek_timeline
     HAS_DEEPEEK_MODULE = True
 except ImportError:
     HAS_DEEPEEK_MODULE = False
-    logger = logging.getLogger(__name__)
-    logger.error("无法导入 deepseek 模块，请确保 backend/deepseek.py 文件存在")
+    deepseek_timeline = None
+
+try:
+    from kimi import get_person_timeline as kimi_timeline
+    HAS_KIMI_MODULE = True
+except ImportError:
+    HAS_KIMI_MODULE = False
+    kimi_timeline = None
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
@@ -37,9 +47,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger('ai_service')
 
-def mock_get_person_timeline(name: str) -> Dict[str, Any]:
-    """当 DeepSeek 模块不可用时，提供模拟数据。"""
-    logger.warning(f"DeepSeek 模块不可用，返回模拟数据")
+def mock_get_person_timeline(name: str, provider: str = "unknown") -> Dict[str, Any]:
+    """当 AI 模块不可用时，提供模拟数据。"""
+    logger.warning(f"{provider} 模块不可用，返回模拟数据")
     return {
         "name": name,
         "style": {
@@ -69,20 +79,35 @@ def mock_get_person_timeline(name: str) -> Dict[str, Any]:
     }
 
 def get_person_timeline(name: str) -> Dict[str, Any]:
-    """调用原始 deepseek 模块获取时间线数据。"""
-    if not HAS_DEEPEEK_MODULE:
-        return mock_get_person_timeline(name)
+    """根据配置的 AI 提供商获取时间线数据，默认使用 Kimi。"""
+    global AI_PROVIDER
     
-    try:
-        result = original_get_person_timeline(name)
-        logger.info(f"Successfully retrieved timeline data for {name}")
-        return result
-    except Exception as e:
-        logger.error(f"Failed to get person data for {name}: {e}")
-        return {
-            "name": name,
-            "error": f"Failed to fetch data: {str(e)}"
-        }
+    logger.info(f"使用 AI 提供商: {AI_PROVIDER}")
+    
+    if AI_PROVIDER == "kimi":
+        if not HAS_KIMI_MODULE or not kimi_timeline:
+            return mock_get_person_timeline(name, "Kimi")
+        try:
+            result = kimi_timeline(name)
+            logger.info(f"成功从 Kimi 获取时间线数据: {name}")
+            return result
+        except Exception as e:
+            logger.error(f"Kimi 获取数据失败 {name}: {e}")
+            return {"name": name, "error": f"Failed to fetch data from Kimi: {str(e)}"}
+            
+    elif AI_PROVIDER == "deepseek":
+        if not HAS_DEEPEEK_MODULE or not deepseek_timeline:
+            return mock_get_person_timeline(name, "DeepSeek")
+        try:
+            result = deepseek_timeline(name)
+            logger.info(f"成功从 DeepSeek 获取时间线数据: {name}")
+            return result
+        except Exception as e:
+            logger.error(f"DeepSeek 获取数据失败 {name}: {e}")
+            return {"name": name, "error": f"Failed to fetch data from DeepSeek: {str(e)}"}
+    else:
+        logger.error(f"未知的 AI 提供商: {AI_PROVIDER}")
+        return mock_get_person_timeline(name, "Unknown")
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -90,7 +115,11 @@ def health_check():
     return jsonify({
         "status": "healthy",
         "service": "ai_agent",
-        "deepseek_available": HAS_DEEPEEK_MODULE
+        "ai_provider": AI_PROVIDER,
+        "providers_available": {
+            "kimi": HAS_KIMI_MODULE,
+            "deepseek": HAS_DEEPEEK_MODULE
+        }
     })
 
 @app.route('/api/timeline', methods=['GET', 'OPTIONS'])
@@ -231,6 +260,8 @@ if __name__ == '__main__':
     debug = os.environ.get('AI_AGENT_DEBUG', 'False').lower() == 'true'
     
     logger.info(f"Starting AI Agent Service on {host}:{port}")
+    logger.info(f"AI Provider: {AI_PROVIDER}")
+    logger.info(f"Kimi module available: {HAS_KIMI_MODULE}")
     logger.info(f"DeepSeek module available: {HAS_DEEPEEK_MODULE}")
     logger.info(f"Debug mode: {debug}")
     
