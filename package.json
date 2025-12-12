@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "husky": "^9.1.7"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "test": "node -e \"console.log('No tests');\""
+  }
+}

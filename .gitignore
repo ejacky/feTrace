@@ -2,3 +2,4 @@
 __pycache__/
 data/*.xls
 config.json
+node_modules/
