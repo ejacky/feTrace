@@ -22,40 +22,19 @@ type Server struct {
 	deepseekService *services.DeepseekService
 	excelService    *services.ExcelService
 	geocodeService  *services.GeocodeService
+	aiAgentService  *services.AIAgentService
 }
 
 func NewServer(cfg *config.Config) (*Server, error) {
 	geocodeService := services.NewGeocodeService(cfg.GeocodeEnabled, cfg.GeocodeMaxCalls)
 
 	var deepseekService *services.DeepseekService
-	
-	if cfg.UseAIAgentService {
-		// 使用 AI Agent 服务
-		aiAgentService := services.NewAIAgentService(cfg.AIAgentServiceURL)
-		deepseekService = services.NewDeepseekServiceWithAIAgent(
-			cfg.DeepseekAPIKey,
-			cfg.DeepseekConnectTimeout,
-			cfg.DeepseekReadTimeout,
-			geocodeService,
-			aiAgentService,
-		)
-		log.Printf("Using AI Agent service at %s", cfg.AIAgentServiceURL)
-	} else {
-		// 使用原始的 DeepSeek API
-		deepseekService = services.NewDeepseekService(
-			cfg.DeepseekAPIKey,
-			cfg.DeepseekConnectTimeout,
-			cfg.DeepseekReadTimeout,
-			geocodeService,
-		)
-		log.Printf("Using original DeepSeek API")
-	}
-
 	s := &Server{
 		config:          cfg,
 		deepseekService: deepseekService,
 		excelService:    services.NewExcelService(),
 		geocodeService:  geocodeService,
+		aiAgentService:  services.NewAIAgentService(cfg.AIAgentServiceURL, geocodeService),
 	}
 
 	// Initialize cache service
@@ -126,22 +105,19 @@ func (s *Server) handlePerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Try to get from DeepSeek if available
-	if s.deepseekService.IsConfigured() {
-		log.Printf("Person '%s' not found in cache, requesting from DeepSeek", name)
 
-		peopleData, err := s.deepseekService.GetTimelineData(name)
-		if err != nil {
-			log.Printf("DeepSeek API error: %v", err)
-			s.httpError(w, fmt.Sprintf("Person not found: %s", name), http.StatusNotFound)
-			return
-		}
+	peopleData, err := s.aiAgentService.GetTimelineData(name)
+	if err != nil {
+		log.Printf("DeepSeek API error: %v", err)
+		s.httpError(w, fmt.Sprintf("Person not found: %s", name), http.StatusNotFound)
+		return
+	}
 
-		if len(peopleData.Persons) > 0 {
-			person := peopleData.Persons[0]
-			s.cacheService.AddPerson(person)
-			s.writeJSON(w, person)
-			return
-		}
+	if len(peopleData.Persons) > 0 {
+		person := peopleData.Persons[0]
+		s.cacheService.AddPerson(person)
+		s.writeJSON(w, person)
+		return
 	}
 
 	s.httpError(w, fmt.Sprintf("Person not found: %s", name), http.StatusNotFound)

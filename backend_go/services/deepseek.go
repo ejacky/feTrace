@@ -13,11 +13,11 @@ import (
 )
 
 type DeepseekService struct {
-	apiKey          string
-	httpClient      *http.Client
-	geocodeService  *GeocodeService
-	aiAgentService  *AIAgentService
-	useAIAgent      bool
+	apiKey         string
+	httpClient     *http.Client
+	geocodeService *GeocodeService
+	aiAgentService *AIAgentService
+	useAIAgent     bool
 }
 
 func NewDeepseekService(apiKey string, connectTimeout, readTimeout time.Duration, geocodeService *GeocodeService) *DeepseekService {
@@ -101,9 +101,9 @@ func (d *DeepseekService) getTimelineViaDeepSeekAPI(name string) (models.PeopleD
 	function.Parameters.Required = []string{"events"}
 
 	request := models.DeepseekRequest{
-		Model:       "deepseek-chat",
-		Temperature: 0.2,
-		Functions:   []models.DeepseekFunction{function},
+		Model:        "deepseek-chat",
+		Temperature:  0.2,
+		Functions:    []models.DeepseekFunction{function},
 		FunctionCall: "get_timeline_data",
 	}
 
@@ -181,7 +181,7 @@ func (d *DeepseekService) getTimelineViaDeepSeekAPI(name string) (models.PeopleD
 		}
 	}
 
-// Create person from results with random styling colors
+	// Create person from results with random styling colors
 	style := models.Style{
 		MarkerColor: "#FF6B6B",
 		LineColor:   "#4ECDC4",

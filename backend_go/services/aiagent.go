@@ -15,17 +15,19 @@ import (
 
 // AIAgentService 提供与 Python AI Agent 服务的通信
 type AIAgentService struct {
-	baseURL    string
-	httpClient *http.Client
+	baseURL        string
+	httpClient     *http.Client
+	geocodeService *GeocodeService
 }
 
 // NewAIAgentService 创建新的 AI Agent 服务客户端
-func NewAIAgentService(baseURL string) *AIAgentService {
+func NewAIAgentService(baseURL string, geocodeService *GeocodeService) *AIAgentService {
 	return &AIAgentService{
 		baseURL: baseURL,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		geocodeService: geocodeService,
 	}
 }
 
@@ -37,7 +39,7 @@ func (a *AIAgentService) GetTimelineData(name string) (models.PeopleData, error)
 
 	// 构建请求 URL
 	apiURL := fmt.Sprintf("%s/api/timeline?name=%s", a.baseURL, url.QueryEscape(name))
-	
+
 	log.Printf("Calling AI Agent service for person: %s", name)
 
 	req, err := http.NewRequest("GET", apiURL, nil)
@@ -73,8 +75,28 @@ func (a *AIAgentService) GetTimelineData(name string) (models.PeopleData, error)
 		aiResponse.Events = []models.Event{}
 	}
 
-	// 可选：添加地理编码 (如果服务端没有处理)
-	// 这部分可以保留基于 Go 的地理编码作为后备
+	// Add geocoding to events if enabled
+	if a.geocodeService != nil {
+		for i := range aiResponse.Events {
+			if aiResponse.Events[i].Place != "" {
+				lat, lon, err := a.geocodeService.Geocode(aiResponse.Events[i].Place)
+				if err != nil {
+					log.Printf("Failed to geocode place '%s': %v", aiResponse.Events[i].Place, err)
+				} else {
+					aiResponse.Events[i].Lat = lat
+					aiResponse.Events[i].Lon = lon
+				}
+			}
+		}
+	}
+
+	// Create person from results with random styling colors
+	style := models.Style{
+		MarkerColor: "#FF6B6B",
+		LineColor:   "#4ECDC4",
+	}
+	aiResponse.Style = style
+	aiResponse.Name = name
 
 	log.Printf("Successfully retrieved timeline data for %s with %d events", name, len(aiResponse.Events))
 	return models.PeopleData{Persons: []models.Person{aiResponse}}, nil
@@ -95,7 +117,7 @@ func (a *AIAgentService) GetTimelineBatch(names []string) ([]models.Person, erro
 	}
 
 	apiURL := fmt.Sprintf("%s/api/batch-timeline", a.baseURL)
-	
+
 	requestBody := struct {
 		Names []string `json:"names"`
 	}{
@@ -129,7 +151,7 @@ func (a *AIAgentService) GetTimelineBatch(names []string) ([]models.Person, erro
 	var response struct {
 		Results []models.Person `json:"results"`
 	}
-	
+
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, fmt.Errorf("failed to decode batch response: %w", err)
 	}
@@ -141,13 +163,13 @@ func (a *AIAgentService) GetTimelineBatch(names []string) ([]models.Person, erro
 func (a *AIAgentService) HealthCheck() (map[string]interface{}, error) {
 	if a.baseURL == "" {
 		return map[string]interface{}{
-			"error": "AI Agent service URL is not configured",
+			"error":  "AI Agent service URL is not configured",
 			"status": "unhealthy",
 		}, fmt.Errorf("service not configured")
 	}
 
 	apiURL := fmt.Sprintf("%s/health", a.baseURL)
-	
+
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create health check request: %w", err)
@@ -156,7 +178,7 @@ func (a *AIAgentService) HealthCheck() (map[string]interface{}, error) {
 	resp, err := a.httpClient.Do(req)
 	if err != nil {
 		return map[string]interface{}{
-			"error": fmt.Sprintf("health check request failed: %v", err),
+			"error":  fmt.Sprintf("health check request failed: %v", err),
 			"status": "unhealthy",
 		}, err
 	}
@@ -165,7 +187,7 @@ func (a *AIAgentService) HealthCheck() (map[string]interface{}, error) {
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return map[string]interface{}{
-			"error": fmt.Sprintf("health check returned status %d: %s", resp.StatusCode, string(body)),
+			"error":  fmt.Sprintf("health check returned status %d: %s", resp.StatusCode, string(body)),
 			"status": "unhealthy",
 		}, fmt.Errorf("unhealthy service")
 	}
