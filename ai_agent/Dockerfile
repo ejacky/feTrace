@@ -22,7 +22,7 @@ RUN useradd -m -u 1000 aiservice && chown -R aiservice:aiservice /app
 USER aiservice
 
 # 暴露端口
-EXPOSE 8002
+EXPOSE 80
 
 # 启动命令
 CMD ["python", "ai_service.py"]

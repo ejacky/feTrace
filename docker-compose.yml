@@ -13,7 +13,7 @@ services:
       - PORT=${PORT:-8001}
     restart: unless-stopped
 
-  nginx:
+  frontend:
     image: m.daocloud.io/docker.io/library/nginx:alpine
     container_name: fetrace-nginx
     ports:
@@ -24,3 +24,33 @@ services:
     depends_on:
       - fetrace
     restart: unless-stopped
+
+  ai-agent:
+    build:
+      context: .
+      dockerfile: ai_agent/Dockerfile
+    container_name: ai_agent_service
+    ports:
+      - "8002:8002"
+    environment:
+      - AI_AGENT_PORT=8002
+      - AI_AGENT_HOST=0.0.0.0
+      - AI_AGENT_DEBUG=False
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_CONNECT_TIMEOUT=15
+      - DEEPSEEK_READ_TIMEOUT=40
+      - GEOCODE_ENABLED=True
+      - GEOCODE_MAX_CALLS=3
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./backend:/app/backend
+      - ./ai_agent/logs:/app/logs
+    depends_on:
+      - fetrace
+    restart: unless-stopped
+    networks:
+      - ai_network
+
+networks:
+  ai_network:
+    driver: bridge
