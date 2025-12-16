@@ -3,7 +3,7 @@ name: Backend Go CI/CD
 on:
   push:
     branches:
-      - main
+      - dev
     # 仅当以下路径下的文件发生变化时，才运行此工作流
     paths:
       - 'backend/**'
